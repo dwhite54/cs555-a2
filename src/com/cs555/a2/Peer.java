@@ -16,12 +16,21 @@ public class Peer {
     private ServerSocket ss;
     private boolean shutdown = false;
     private int peerPort;
-    private int discoveryPort;
+    private static String discoveryMachine;
+    private static int discoveryPort;
+    private static char ID;
+    static boolean isJoined;
     private PeerInfo[][] routingTable = new PeerInfo[Helper.IDSpaceBits / 4][16];
 
-    public Peer(int discoveryPort, int peerPort) throws IOException {
+    public Peer(String discoveryMachine, int discoveryPort, int peerPort) throws IOException {
+        this(discoveryMachine, discoveryPort, peerPort, Helper.GenerateID());
+    }
+
+    public Peer(String discoveryMachine, int discoveryPort, int peerPort, char ID) throws IOException {
+        this.discoveryMachine = discoveryMachine;
         this.discoveryPort = discoveryPort;
         this.peerPort = peerPort;
+        this.ID = ID;
         ss = new ServerSocket(this.peerPort);
         final Thread mainThread = Thread.currentThread();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -39,11 +48,12 @@ public class Peer {
         shutdown = true;
     }
 
-    public void run() throws IOException {
+    public void run() throws IOException, InterruptedException {
         // running infinite loop for getting
         // client request
         Thread mT = new Peer.SendHandler();
         mT.start();
+        mT.wait(); //wait for join to complete
         while (!shutdown)
         {
             Socket s = null;
@@ -67,7 +77,38 @@ public class Peer {
     private static class SendHandler extends Thread {
         @Override
         public void run() {
+            String joinNode = getJoinNode();
+            processJoin(joinNode);
+            notify();
 
+            //then start a loop for listening to log requests, etc
+        }
+
+        private void processJoin(String joinNode) {
+            //big fat TODO
+        }
+
+        private String getJoinNode() {
+            String joinNode = null;
+            try (
+                    Socket s = new Socket(discoveryMachine, discoveryPort);
+                    DataInputStream in = new DataInputStream(s.getInputStream());
+                    DataOutputStream out = new DataOutputStream(s.getOutputStream())
+            ) {
+                out.writeUTF("join");
+                out.writeShort(ID);
+                if (in.readBoolean()) {
+                    joinNode = in.readUTF();
+                    isJoined = true;
+                } else { //collision detected
+                    ID = Helper.GenerateID();
+                    getJoinNode();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                dumpStack();
+            }
+            return joinNode;
         }
     }
 
