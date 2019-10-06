@@ -9,9 +9,10 @@ import java.util.Random;
 public class Helper {
     public static Random rng = new Random(Instant.now().toEpochMilli());
     public final static int IDSpaceBits = 16;
-
-    //String hex = Short.toHexString(i);
-    //ByteBuffer.wrap(bytes).getShort();
+    public final static int nb = 4; //number of bits per byte
+    public final static int nB = IDSpaceBits / nb; //number of Bytes per ID
+    public final static int LeafSetSize = 2;
+    public final static int l = LeafSetSize / 2;
 
     public static char GenerateID() {
         return (char)rng.nextInt();

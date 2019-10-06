@@ -2,36 +2,44 @@ package com.cs555.a2;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.cs555.a2.Helper.nB;
+import static com.cs555.a2.Helper.nb;
 
 public class Peer {
     static class PeerInfo {
         public char ID;
-        public InetAddress address;
+        public String address;
     }
 
     private ServerSocket ss;
     private boolean shutdown = false;
-    private int peerPort;
+    private static int peerPort;
     private static String discoveryMachine;
     private static int discoveryPort;
-    private static char ID;
-    static boolean isJoined;
-    private PeerInfo[][] routingTable = new PeerInfo[Helper.IDSpaceBits / 4][16];
+    private static boolean isJoined;
+    private static PeerInfo me = new PeerInfo();
+    private static PeerInfo[][] routingTable = new PeerInfo[Helper.IDSpaceBits / 4][16];
+    private static ConcurrentHashMap<Character, String> files = new ConcurrentHashMap<>();
+    private static ConcurrentHashMap<Character, PeerInfo> leaves = new ConcurrentHashMap<>();
 
     public Peer(String discoveryMachine, int discoveryPort, int peerPort) throws IOException {
         this(discoveryMachine, discoveryPort, peerPort, Helper.GenerateID());
     }
 
     public Peer(String discoveryMachine, int discoveryPort, int peerPort, char ID) throws IOException {
-        this.discoveryMachine = discoveryMachine;
-        this.discoveryPort = discoveryPort;
-        this.peerPort = peerPort;
-        this.ID = ID;
-        ss = new ServerSocket(this.peerPort);
+        Peer.discoveryMachine = discoveryMachine;
+        Peer.discoveryPort = discoveryPort;
+        Peer.peerPort = peerPort;
+        Peer.me.ID = ID;
+        Peer.me.address = InetAddress.getLocalHost().getHostName();
+        ss = new ServerSocket(Peer.peerPort);
         final Thread mainThread = Thread.currentThread();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
@@ -85,7 +93,22 @@ public class Peer {
         }
 
         private void processJoin(String joinNode) {
-            //big fat TODO
+            try (
+                    Socket s = new Socket(joinNode, peerPort);
+                    DataInputStream in = new DataInputStream(s.getInputStream());
+                    DataOutputStream out = new DataOutputStream(s.getOutputStream());
+                    ) {
+                out.writeUTF("join");
+                out.writeChar(me.ID);
+                if (in.readBoolean()) { //accepting joins
+                    int numPeers = in.readInt();
+                    for (int i = 0; i < numPeers; i++){
+
+                    }
+                }
+            } catch (IOException e) {
+
+            }
         }
 
         private String getJoinNode() {
@@ -96,12 +119,12 @@ public class Peer {
                     DataOutputStream out = new DataOutputStream(s.getOutputStream())
             ) {
                 out.writeUTF("join");
-                out.writeShort(ID);
+                out.writeShort(me.ID);
                 if (in.readBoolean()) {
                     joinNode = in.readUTF();
                     isJoined = true;
                 } else { //collision detected
-                    ID = Helper.GenerateID();
+                    me.ID = Helper.GenerateID();
                     getJoinNode();
                 }
             } catch (IOException e) {
@@ -132,12 +155,54 @@ public class Peer {
         {
             try {
                 String host = s.getInetAddress().getHostName();
-                switch (in.readUTF()) {
+                String cmd = in.readUTF();
+                char ID = in.readChar();
+                switch (cmd) {
                     case "find":
-                        handleFind();
+                        //check if it's in our data
+                        if (files.containsKey(ID)) {
+                            out.writeBoolean(true); // I have the file
+                            out.write(new FileInputStream(files.get(ID)).readAllBytes());
+                        } else {
+                            out.writeBoolean(false); // I will route you to the file
+                            //if leaf set best, route to one of them
+                            if (leaves.containsKey(ID)) {
+                                out.writeUTF(leaves.get(ID).address);
+                            } else {
+                                //route with routing table
+                                int rowIdx = getLongestCommonPrefixLength(ID, me.ID);
+                                int colIdx;
+                                if (rowIdx < 0) { // no match found--illegal routing table
+                                    out.writeUTF(me.address); // this will indicate internal error
+                                    System.out.println("Illegal routing table, terminating.");
+                                    dumpStack();
+                                    return;
+                                } else if (rowIdx + 1 >= nB) { // complete match
+                                    colIdx = getValueAtHexIdx(ID, rowIdx);
+                                }
+                                colIdx = getValueAtHexIdx(ID, rowIdx + 1);
+                                PeerInfo bestPeer = routingTable[rowIdx][colIdx];
+                                if (bestPeer == null) {
+                                    //need to find a peer closer than us
+                                    //search leaf set and current row
+                                    bestPeer = new PeerInfo();
+                                    bestPeer.ID = me.ID;
+                                    for (char leafID : leaves.keySet()) {
+                                        if (Math.abs(leafID - ID) < Math.abs(bestPeer.ID - ID))
+                                            bestPeer = leaves.get(leafID);
+                                    }
+                                    for (PeerInfo rowPeer : routingTable[rowIdx]) {
+                                        if (rowPeer != null && rowPeer.ID != me.ID &&
+                                                Math.abs(rowPeer.ID - ID) < Math.abs(bestPeer.ID - ID))
+                                            bestPeer = rowPeer;
+                                    }
+                                }
+                                out.writeUTF(bestPeer.address);
+                            }
+                        }
+
                         break;
                     case "join":
-                        handleJoin();
                         break;
                 }
                 this.in.close();
@@ -148,10 +213,27 @@ public class Peer {
             }
         }
 
-        private void handleJoin() {
+        //length of longest common prefix
+        //returns -1 if no match
+        private static int getLongestCommonPrefixLength(char ID1, char ID2) {
+            int mask = 0;
+            int i = 0;
+            while (i < nB) {
+                int shift = (nB - i - 1) * nb;
+                mask += (0xf << shift);
+                if ((ID1 & mask) != (ID2 & mask))
+                    return i - 1;
+                i++;
+            }
+            return i;
         }
 
-        private void handleFind() {
+        //return hex/integer value at ith position in hex string of ID
+        private static int getValueAtHexIdx(char ID, int i) {
+            if (i >= Helper.nB - 1) throw new IndexOutOfBoundsException();
+            int shift = (Helper.nB - i - 1) * Helper.nb;
+            int mask = 0xf << shift;
+            return (mask & ID) >> shift;
         }
     }
 }
