@@ -83,7 +83,7 @@
       <workItem from="1569612280748" duration="599000" />
       <workItem from="1569957215943" duration="599000" />
       <workItem from="1570226078515" duration="13632000" />
-      <workItem from="1570305091172" duration="17424000" />
+      <workItem from="1570305091172" duration="18630000" />
     </task>
     <task id="LOCAL-00001" summary="Implement discovery node">
       <created>1570238006385</created>
@@ -99,7 +99,14 @@
       <option name="project" value="LOCAL" />
       <updated>1570239739512</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Routing algorithm fleshed out">
+      <created>1570323899221</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1570323899221</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -122,6 +129,7 @@
     <option name="LOCAL_CHANGES_DETAILS_PREVIEW_SHOWN" value="true" />
     <MESSAGE value="Implement discovery node" />
     <MESSAGE value="Implement peer side of discovery join" />
-    <option name="LAST_COMMIT_MESSAGE" value="Implement peer side of discovery join" />
+    <MESSAGE value="Routing algorithm fleshed out" />
+    <option name="LAST_COMMIT_MESSAGE" value="Routing algorithm fleshed out" />
   </component>
 </project>

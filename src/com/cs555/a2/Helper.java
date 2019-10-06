@@ -8,9 +8,9 @@ import java.util.Random;
 
 public class Helper {
     public static Random rng = new Random(Instant.now().toEpochMilli());
-    public final static int IDSpaceBits = 16;
-    public final static int nb = 4; //number of bits per byte
-    public final static int nB = IDSpaceBits / nb; //number of Bytes per ID
+    public final static int pPid = 16;
+    public final static int bPh = 4; //number of bits per hex
+    public final static int hPid = pPid / bPh; //number of hex chars per ID
     public final static int LeafSetSize = 2;
     public final static int l = LeafSetSize / 2;
 
