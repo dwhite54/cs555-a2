@@ -9,13 +9,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.cs555.a2.Helper.hPid;
-import static com.cs555.a2.Helper.bPh;
+import static com.cs555.a2.Helper.HpID;
+import static com.cs555.a2.Helper.BpH;
 
 public class Peer {
     static class PeerInfo {
-        public char ID;
-        public String address;
+        char ID;
+        String address;
     }
 
     private ServerSocket ss;
@@ -25,7 +25,7 @@ public class Peer {
     private static int discoveryPort;
     private static boolean isJoined;
     private static PeerInfo me = new PeerInfo();
-    private static PeerInfo[][] routingTable = new PeerInfo[Helper.pPid / 4][16];
+    private static PeerInfo[][] routingTable = new PeerInfo[Helper.BpID / 4][16];
     private static ConcurrentHashMap<Character, String> files = new ConcurrentHashMap<>();
     private static ConcurrentHashMap<Character, PeerInfo> leaves = new ConcurrentHashMap<>();
 
@@ -94,29 +94,34 @@ public class Peer {
                         DataInputStream in = new DataInputStream(s.getInputStream());
                         DataOutputStream out = new DataOutputStream(s.getOutputStream());
                 ) {
-                    out.writeUTF("join");
-                    out.writeChar(me.ID);
-                    if (in.readBoolean()) { //accepting joins
-                        for (int j = 0; j < hPid * bPh; j++) {
-                            char newID = in.readChar();
-                            String newAddress = in.readUTF();
-                            if (j == myColIdx) {
-                                routingTable[i][j] = me;
-                            } else {
-                                PeerInfo newPeer = new PeerInfo();
-                                newPeer.ID = newID;
-                                newPeer.address = newAddress;
-                                routingTable[i][j] = newPeer;
+                    int p = 0;
+                    do {
+                        out.writeUTF("join");
+                        out.writeChar(me.ID);
+                        out.writeInt(i); // row index we want from the peer
+                        if (in.readBoolean()) { //accepting joins
+                            p = in.readInt(); // length of prefix match
+                            for (int j = 0; j < HpID; j++) {
+                                char newID = in.readChar();
+                                String newAddress = in.readUTF();
+                                if (j == myColIdx) {
+                                    routingTable[i][j] = me;
+                                } else {
+                                    PeerInfo newPeer = new PeerInfo();
+                                    newPeer.ID = newID;
+                                    newPeer.address = newAddress;
+                                    routingTable[i][j] = newPeer;
+                                }
                             }
+                            joinNode = in.readUTF();
                         }
-                        joinNode = in.readUTF();
-                    }
-                } catch (IOException e) {
+                        i++;
+                    } while (i < p);
+                } catch(IOException e){
                     e.printStackTrace();
                     dumpStack();
                 }
-                i++;
-            } while (i < hPid); //TODO
+            } while (i < HpID); //TODO
 
             notify();
 
@@ -137,7 +142,6 @@ public class Peer {
                 out.writeShort(me.ID);
                 if (in.readBoolean()) {
                     joinNode = in.readUTF();
-                    isJoined = true;
                 } else { //collision detected
                     me.ID = Helper.GenerateID();
                     getJoinNode();
@@ -192,7 +196,7 @@ public class Peer {
                                     System.out.println("Illegal routing table, terminating.");
                                     dumpStack();
                                     return;
-                                } else if (rowIdx + 1 >= hPid) { // complete match
+                                } else if (rowIdx + 1 >= HpID) { // complete match
                                     colIdx = getValueAtHexIdx(ID, rowIdx);
                                 }
                                 colIdx = getValueAtHexIdx(ID, rowIdx + 1);
@@ -234,8 +238,8 @@ public class Peer {
     private static int getLongestCommonPrefixLength(char ID1, char ID2) {
         int mask = 0;
         int i = 0;
-        while (i < hPid) {
-            int shift = (hPid - i - 1) * bPh;
+        while (i < HpID) {
+            int shift = (HpID - i - 1) * BpH;
             mask += (0xf << shift);
             if ((ID1 & mask) != (ID2 & mask))
                 return i - 1;
@@ -246,8 +250,8 @@ public class Peer {
 
     //return hex/integer value at ith position in hex string of ID
     private static int getValueAtHexIdx(char ID, int i) {
-        if (i >= Helper.hPid - 1) throw new IndexOutOfBoundsException();
-        int shift = (Helper.hPid - i - 1) * Helper.bPh;
+        if (i >= Helper.HpID - 1) throw new IndexOutOfBoundsException();
+        int shift = (Helper.HpID - i - 1) * Helper.BpH;
         int mask = 0xf << shift;
         return (mask & ID) >> shift;
     }
