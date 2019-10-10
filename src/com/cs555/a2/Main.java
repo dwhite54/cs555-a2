@@ -47,11 +47,75 @@ use java.util.logging instead of system.out.print
 
  */
 
+import org.w3c.dom.ranges.RangeException;
+
+import java.io.IOException;
+
 public class Main {
+    public enum Mode {
+        DISCOVERY,
+        STOREDATA,
+        PEER
+    }
+
+    private static Mode mode;
+    private static int discoveryPort = 0;
+    private static int peerPort = 0;
+    private static String discoveryMachine = "";
 
 
+    public static void main(String[] args) throws IOException {
+        if (args.length == 0 || args[0].equals("--help")) {
+            printUsage();
+            System.exit(0);
+        }
+        for (int i = 0; i < args.length; i++) {
+            try {
+                switch (args[i]) {
+                    case "--discovery-port":
+                        discoveryPort = Integer.parseInt(args[i+1]);
+                        i++;
+                        break;
+                    case "--discovery-machine":
+                        discoveryMachine = args[i+1];
+                        i++;
+                        break;
+                    case "--peer-port":
+                        peerPort = Integer.parseInt(args[i+1]);
+                        i++;
+                        break;
+                    case "--mode":
+                        switch (args[i+1].toLowerCase()) {
+                            case "discovery":
+                                mode = Mode.DISCOVERY;
+                                break;
+                            case "storedata":
+                                mode = Mode.STOREDATA;
+                                break;
+                            case "peer":
+                                mode = Mode.PEER;
+                                break;
+                            default:
+                                throw new IllegalArgumentException("Invalid mode");
+                        }
+                        break;
+                }
+            } catch (RangeException | IllegalArgumentException e) {  //catch range and parsing errors
+                System.out.println("Error parsing arguments");
+                printUsage();
+                e.printStackTrace();
+            }
+        }
+    }
 
-    public static void main(String[] args) {
-	// write your code here
+    private static void printUsage() {
+        System.out.println("Options:");
+        System.out.println("\t--mode: [client,chunkserver,controller], omit this and provide --chunk-machines to start all processes.\n");
+        System.out.println("\t--controller-port: port the controller will communicate with");
+        System.out.println("\t--controller-machine: machine the controller will run on");
+        System.out.println("\t--chunk-port: port the chunk servers will communicate with");
+        System.out.println("\t--chunk-machines: (optional) comma-delimited list of machines the chunk servers will run on");
+        System.out.println("\t--debug: (optional) print extra debug output");
+        System.out.println("\t--replication: (optional) use replication (omit to use erasure coding, do not mix)");
     }
 }
