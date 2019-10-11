@@ -6,22 +6,23 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DiscoveryNode {
+class DiscoveryNode {
     static class PeerInfo {
-        public InetAddress address;
-        public String name;
+        InetAddress address;
+        String name;
     }
 
     private ConcurrentHashMap<Character, PeerInfo> peers = new ConcurrentHashMap<>();
 
     private ServerSocket ss;
     private boolean shutdown = false;
+    private static final String pre = "Discovery: ";
+    private static int peerPort;
 
-    public DiscoveryNode(int discoveryPort) throws IOException {
+    DiscoveryNode(int discoveryPort, int peerPort) throws IOException {
         ss = new ServerSocket(discoveryPort);
         final Thread mT = new InfoWriter();
         final Thread mainThread = Thread.currentThread();
@@ -43,12 +44,16 @@ public class DiscoveryNode {
         mT.start();
     }
 
+    private void print(String s) {
+        System.out.println(pre+s);
+    }
+
     private void Close() throws IOException {
         ss.close();
         shutdown = true;
     }
 
-    public void run() throws IOException {
+    void run() throws IOException {
         while (!shutdown)
         {
             Socket s = null;
@@ -65,20 +70,22 @@ public class DiscoveryNode {
                             out.writeBoolean(false); // collision detected
                         else {
                             out.writeBoolean(true);
-
-                            int i = 0;
-                            for (PeerInfo machine : peers.values()) {
-                                if (i == Helper.rng.nextInt(peers.size()))
-                                    out.writeUTF(machine.address.getHostName());
-                                i++;
-                            }
+                            out.writeUTF(getRandomPeer());
 
                             PeerInfo newPeer = new PeerInfo();
                             newPeer.address = s.getInetAddress();
                             newPeer.name = Helper.getNickname(ID);
+                            print("Peer joined: " + newPeer.address + ":" + peerPort + ", nickname: " + newPeer.name);
                             peers.put(ID, newPeer);
                         }
                         break;
+                    case "get":
+                        if (peers.isEmpty())
+                            out.writeBoolean(false);
+                        else {
+                            out.writeBoolean(true);
+                            out.writeUTF(getRandomPeer());
+                        }
                     case "leave":
                         peers.remove(ID);
                         break;
@@ -93,17 +100,28 @@ public class DiscoveryNode {
         }
     }
 
+    private String getRandomPeer(){
+        int i = 0;
+        int randInt = Helper.rng.nextInt(peers.size());
+        for (PeerInfo machine : peers.values()) {
+            if (i == randInt)
+                return machine.address.getHostName();
+            i++;
+        }
+        return "";
+    }
+
     private class InfoWriter extends Thread {
         @Override
         public void run() {
             while (!shutdown) {
                 Scanner scanner = new Scanner(System.in);
                 scanner.nextLine();
-                System.out.println("Known peers are:");
+                print("Known peers are:");
                 for (var entry : peers.entrySet()){
                     var val = entry.getValue();
                     String key = Integer.toHexString(entry.getKey());
-                    System.out.println(val.name + "@" + val.address + " id: " + key);
+                    print(val.name + "@" + val.address + " id: " + key);
                 }
             }
 

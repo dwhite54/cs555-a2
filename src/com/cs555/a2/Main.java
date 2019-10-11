@@ -50,6 +50,7 @@ use java.util.logging instead of system.out.print
 import org.w3c.dom.ranges.RangeException;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 
 public class Main {
     public enum Mode {
@@ -62,9 +63,9 @@ public class Main {
     private static int discoveryPort = 0;
     private static int peerPort = 0;
     private static String discoveryMachine = "";
+    private static char peerId = Helper.GenerateID();
 
-
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException, NoSuchAlgorithmException {
         if (args.length == 0 || args[0].equals("--help")) {
             printUsage();
             System.exit(0);
@@ -74,15 +75,15 @@ public class Main {
                 switch (args[i]) {
                     case "--discovery-port":
                         discoveryPort = Integer.parseInt(args[i+1]);
-                        i++;
                         break;
                     case "--discovery-machine":
                         discoveryMachine = args[i+1];
-                        i++;
                         break;
                     case "--peer-port":
                         peerPort = Integer.parseInt(args[i+1]);
-                        i++;
+                        break;
+                    case "--peer-id":
+                        peerId = (char)Integer.parseInt(args[i+1]);
                         break;
                     case "--mode":
                         switch (args[i+1].toLowerCase()) {
@@ -105,6 +106,21 @@ public class Main {
                 printUsage();
                 e.printStackTrace();
             }
+        }
+
+        switch (mode) {
+            case DISCOVERY:
+                DiscoveryNode d = new DiscoveryNode(discoveryPort, peerPort);
+                d.run();
+                break;
+            case STOREDATA:
+                StoreData s = new StoreData(discoveryMachine, discoveryPort, peerPort);
+                s.run();
+                break;
+            case PEER:
+                Peer p = new Peer(discoveryMachine, discoveryPort, peerPort, peerId);
+                p.run();
+                break;
         }
     }
 

@@ -7,25 +7,48 @@ import java.time.Instant;
 import java.util.Random;
 
 public class Helper {
-    public static Random rng = new Random(Instant.now().toEpochMilli());
-    public final static int BpID = 16;
-    public final static int BpH = 4; //number of bits per hex
-    public final static int HpID = BpID / BpH; //number of hex chars per ID
-    public final static int LeafSetSize = 2;
+    static Random rng = new Random(Instant.now().toEpochMilli());
+    final static int BpID = 16;
+    private final static int BpH = 4; //number of bits per hex
+    final static int HpID = BpID / BpH; //number of hex chars per ID
+    private final static int LeafSetSize = 2;
     public final static int l = LeafSetSize / 2;
 
-    public static char GenerateID() {
+    static char GenerateID() {
         return (char)rng.nextInt();
     }
 
-    public static char getDigest(byte[] input) throws NoSuchAlgorithmException {
+    static char getDigest(byte[] input) throws NoSuchAlgorithmException {
         MessageDigest crypt = MessageDigest.getInstance("MD5");
         crypt.reset();
         crypt.update(input);
         return ByteBuffer.wrap(crypt.digest()).getChar();
     }
 
-    public static String getNickname(char ID) {
+    //length of longest common prefix
+    //returns -1 if no match
+    static int getLongestCommonPrefixLength(char ID1, char ID2) {
+        int mask = 0;
+        int i = 0;
+        while (i < HpID) {
+            int shift = (HpID - i - 1) * BpH;
+            mask += (0xf << shift);
+            if ((ID1 & mask) != (ID2 & mask))
+                return i - 1;
+            i++;
+        }
+        return i;
+    }
+
+    //return hex/integer value at ith position in hex string of ID
+    static int getValueAtHexIdx(char ID, int i) {
+        if (i >= Helper.HpID - 1) throw new IndexOutOfBoundsException();
+        int shift = (Helper.HpID - i - 1) * Helper.BpH;
+        int mask = 0xf << shift;
+        return (mask & ID) >> shift;
+    }
+
+    static String getNickname(char ID) {
         int idx = nicknames.length % ID;
         return nicknames[idx];
     }
