@@ -65,6 +65,12 @@ class Peer {
         }
     }
 
+    private static void printFiles() {
+        print("FILES");
+        for (var file : files.entrySet())
+            print(Integer.toHexString(file.getKey()) + ": " + file.getValue());
+    }
+
     private void Close() throws IOException {
         ss.close();
         shutdown = true;
@@ -119,10 +125,10 @@ class Peer {
                             exit = true;
                             break;
                         case "showtable":
-                            print("table");
+                            printTable();
                             break;
                         case "showfiles":
-                            print("files");
+                            printFiles();
                             break;
                         default:
                             System.out.println("Invalid verb");

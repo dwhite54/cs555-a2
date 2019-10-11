@@ -114,12 +114,14 @@ public class Main {
                 d.run();
                 break;
             case STOREDATA:
-                StoreData s = new StoreData(discoveryMachine, discoveryPort, peerPort);
-                s.run();
+                //StoreData s = new StoreData(discoveryMachine, discoveryPort, peerPort);
+                //s.run();
+                System.out.println("Storedata hello");
                 break;
             case PEER:
                 Peer p = new Peer(discoveryMachine, discoveryPort, peerPort, peerId);
                 p.run();
+                System.out.println("Peer " + Integer.toHexString(peerId) + " hello");
                 break;
         }
     }
