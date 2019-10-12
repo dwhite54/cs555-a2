@@ -63,24 +63,24 @@ class StoreData {
         }
     }
 
-    private boolean processWrite(String fileName) throws NoSuchAlgorithmException {
+    private boolean processWrite(String filename) throws NoSuchAlgorithmException {
         byte[] contents;
-        try (FileInputStream fileInputStream = new FileInputStream(fileName)) {
+        try (FileInputStream fileInputStream = new FileInputStream(filename)) {
             contents = fileInputStream.readAllBytes();
         } catch (IOException e) {
             print("Error reading file from disk");
             return false;
         }
-        char contentID = Helper.getDigest(contents);
+        char contentID = Helper.getDigest(filename.getBytes());
         String peerHost;
         try (
-                Socket discoverySocket = new Socket(discoveryMachine, discoveryPort);
-                DataInputStream din = new DataInputStream(discoverySocket.getInputStream());
-                DataOutputStream dout = new DataOutputStream(discoverySocket.getOutputStream())
+                Socket s = new Socket(discoveryMachine, discoveryPort);
+                DataInputStream in = new DataInputStream(s.getInputStream());
+                DataOutputStream out = new DataOutputStream(s.getOutputStream())
         ) {
-            dout.writeUTF("get");
-            if (din.readBoolean())
-                peerHost = din.readUTF();
+            out.writeUTF("get");
+            if (in.readBoolean())
+                peerHost = in.readUTF();
             else {
                 print("Discovery has no peers");
                 return false;
@@ -90,24 +90,22 @@ class StoreData {
             e.printStackTrace();
             return false;
         }
-        boolean found = false;
-        while (!found) {
+
+        while (true) {
             try (
-                    Socket peerSocket = new Socket(peerHost, peerPort);
-                    DataInputStream pin = new DataInputStream(peerSocket.getInputStream());
-                    DataOutputStream pout = new DataOutputStream(peerSocket.getOutputStream())
+                    Socket s = new Socket(peerHost, peerPort);
+                    DataInputStream in = new DataInputStream(s.getInputStream());
+                    DataOutputStream out = new DataOutputStream(s.getOutputStream())
             ) {
-                pout.writeUTF("insert");
-                pout.writeChar(contentID);
-                if (pin.readBoolean()) {  // this node has the file, so update it
-                    pout.write(contents);
-                    found = true;
+                out.writeUTF("insert");
+                out.writeChar(contentID);
+                String newPeerHost = in.readUTF();
+                if (newPeerHost.equals(peerHost)) {  // this node has the file
+                    out.writeUTF(filename);
+                    out.writeInt(contents.length);
+                    out.write(contents);
+                    break;
                 } else {
-                    String newPeerHost = pin.readUTF();
-                    if (peerHost.equals("") || peerHost.equals(newPeerHost)) {
-                        print("internal peer routing error");
-                        return false;
-                    }
                     peerHost = newPeerHost;
                 }
             } catch (IOException e) {
