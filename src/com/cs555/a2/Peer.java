@@ -24,7 +24,6 @@ class Peer {
     private static int peerPort;
     private static String discoveryMachine;
     private static int discoveryPort;
-    private static boolean isJoined;
     private static PeerInfo me = new PeerInfo();
     private static PeerInfo[][] routingTable = new PeerInfo[HpID][BpH * 4];
     private static ConcurrentHashMap<Character, String> files = new ConcurrentHashMap<>();
@@ -56,7 +55,6 @@ class Peer {
 
     private static void printTable() {
         print("ROUTING TABLE");
-        int i = 0;
         for (PeerInfo[] row : routingTable) {
             System.out.print("| ");
             for (PeerInfo cell : row) {
@@ -73,16 +71,18 @@ class Peer {
     }
 
     private void Close() throws IOException {
+        notifyDiscoveryOfDeath();
         ss.close();
         shutdown = true;
     }
 
-    void run() throws IOException, InterruptedException {
+    void run() throws IOException {
+        joinSelf();
+
         // running infinite loop for getting
         // client request
         Thread mT = new Peer.SendHandler();
         mT.start();
-        mT.wait(); //wait for join to complete
         while (!shutdown)
         {
             Socket s = null;
@@ -101,68 +101,25 @@ class Peer {
                 e.printStackTrace();
             }
         }
+        notifyDiscoveryOfDeath();
     }
 
-    private static class SendHandler extends Thread {
-        @Override
-        public void run() {
-            joinSelf();
-            notify();
-
-            boolean exit = false;
-            while (!exit) {
-                Scanner scanner = new Scanner(System.in);
-                String input;
-                System.out.println("Type a command and hit return. To see available commands, type 'help'");
-                while (!exit) {
-                    System.out.print(">");
-                    input = scanner.nextLine();
-                    String[] inputs = input.split(" ");
-                    switch (inputs[0]) {
-                        case "quit":
-                        case "exit":
-                        case "bye":
-                            exit = true;
-                            break;
-                        case "showtable":
-                            printTable();
-                            break;
-                        case "showfiles":
-                            printFiles();
-                            break;
-                        default:
-                            System.out.println("Invalid verb");
-                        case "help":
-                            printHelp();
-                            break;
-                    }
-                }
-            }
-        }
-
-        private void printHelp() {
-            System.out.println("Available commands:");
-            System.out.println("\t[quit,exit,bye]: Exit the program.");
-            System.out.println("\tshowtable: print routing table");
-            System.out.println("\tshowfiles: print filenames stored here");
-            System.out.println("\thelp: print this list.");
-        }
-
-        private void joinSelf() {
-            String joinNode;
-            try (
-                    Socket discoverySocket = new Socket(discoveryMachine, discoveryPort);
-                    DataInputStream din = new DataInputStream(discoverySocket.getInputStream());
-                    DataOutputStream dout = new DataOutputStream(discoverySocket.getOutputStream())
-            ) {
-                dout.writeUTF("join");
+    private void joinSelf() {
+        String joinNode;
+        try (
+                Socket discoverySocket = new Socket(discoveryMachine, discoveryPort);
+                DataInputStream din = new DataInputStream(discoverySocket.getInputStream());
+                DataOutputStream dout = new DataOutputStream(discoverySocket.getOutputStream())
+        ) {
+            dout.writeUTF("join");
+            dout.writeShort(me.ID);
+            while (din.readBoolean()) {  //while collision detected
+                me.ID = Helper.GenerateID();
+                print("Collision detected, trying new ID " + Integer.toHexString(me.ID));
                 dout.writeShort(me.ID);
-                while (din.readBoolean()) {  //while collision detected
-                    me.ID = Helper.GenerateID();
-                    print("Collision detected, trying new ID " + Integer.toHexString(me.ID));
-                    dout.writeShort(me.ID);
-                }
-                joinNode = din.readUTF();
+            }
+            joinNode = din.readUTF();
+            if (!joinNode.equals("")) { //else we are the first
 
                 //route self through table, getting rows of routing table along the way
                 int rowIdx = 0;
@@ -205,10 +162,9 @@ class Peer {
                             break;
                         }
                         joinNode = nextNode;
-                    } catch(IOException e){
+                    } catch (IOException e) {
                         dout.writeBoolean(false);
                         e.printStackTrace();
-                        dumpStack();
                         return;
                     }
                 }
@@ -232,19 +188,60 @@ class Peer {
                             } catch (IOException e) {
                                 dout.writeBoolean(false);
                                 e.printStackTrace();
-                                dumpStack();
                                 return;
                             }
                         }
                     }
                 }
-
-                dout.writeBoolean(true);
-            } catch (IOException e) {
-                print("Failed getting join node from discovery.");
-                e.printStackTrace();
-                dumpStack();
             }
+            dout.writeBoolean(true);
+        } catch (IOException e) {
+            print("Failed getting join node from discovery.");
+            e.printStackTrace();
+        }
+    }
+
+    private static class SendHandler extends Thread {
+        @Override
+        public void run() {
+            boolean exit = false;
+            while (!exit) {
+                Scanner scanner = new Scanner(System.in);
+                String input;
+                System.out.println("Type a command and hit return. To see available commands, type 'help'");
+                while (!exit) {
+                    System.out.print(">");
+                    input = scanner.nextLine();
+                    String[] inputs = input.split(" ");
+                    switch (inputs[0]) {
+                        case "quit":
+                        case "exit":
+                        case "bye":
+                            exit = true;
+                            break;
+                        case "showtable":
+                            printTable();
+                            break;
+                        case "showfiles":
+                            printFiles();
+                            break;
+                        default:
+                            System.out.println("Invalid verb");
+                        case "help":
+                            printHelp();
+                            break;
+                    }
+                }
+                notifyDiscoveryOfDeath();
+            }
+        }
+
+        private void printHelp() {
+            System.out.println("Available commands:");
+            System.out.println("\t[quit,exit,bye]: Exit the program.");
+            System.out.println("\tshowtable: print routing table");
+            System.out.println("\tshowfiles: print filenames stored here");
+            System.out.println("\thelp: print this list.");
         }
     }
 
@@ -329,7 +326,7 @@ class Peer {
                 }
             }
             bestPeer = route(ID);
-            out.writeUTF(bestPeer.address);
+            out.writeUTF(bestPeer.address); //TODO null reference
             //if we are closest to this one, share leaf set and propagate
             if (bestPeer.ID == me.ID) {
                 int meDist = Helper.ringDistance(me.ID, ID);
@@ -373,6 +370,7 @@ class Peer {
             else if (meDist >= 0 && Helper.ringDistance(rightLeaf.ID, newNode.ID) <= 0)
                 rightLeaf = newNode;
             //assuming we don't need to check our leaf set against anything else
+            //TODO handle file movements
         }
 
         private PeerInfo route(char ID) throws IOException {
@@ -430,6 +428,18 @@ class Peer {
                 return leftLeaf;
             else
                 return rightLeaf;
+        }
+    }
+
+    private static void notifyDiscoveryOfDeath() {
+        try (
+                Socket discoverySocket = new Socket(discoveryMachine, discoveryPort);
+                DataOutputStream dout = new DataOutputStream(discoverySocket.getOutputStream())
+        ) {
+            dout.writeUTF("leave");
+            dout.writeShort(me.ID);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

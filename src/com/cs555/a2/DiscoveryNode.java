@@ -24,6 +24,7 @@ class DiscoveryNode {
 
     DiscoveryNode(int discoveryPort, int peerPort) throws IOException {
         ss = new ServerSocket(discoveryPort);
+        peerPort = peerPort;
         final Thread mT = new InfoWriter();
         final Thread mainThread = Thread.currentThread();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -107,58 +108,58 @@ class DiscoveryNode {
 
         @Override
         public void run() {
-            while (!shutdown) {
-                try {
-                    String cmd = in.readUTF();
-                    switch (cmd) {
-                        case "join":
-                            synchronized (peers) {
-                                char ID = in.readChar();
-                                while (peers.containsKey(ID)) {
-                                    print("Collision detected");
-                                    out.writeBoolean(true);
-                                    ID = in.readChar();
-                                }
-                                out.writeBoolean(false);
-                                out.writeUTF(getRandomPeer());
-                                print("Dispatched random peer, waiting for join completion...");
-                                PeerInfo newPeer = new PeerInfo();
-                                newPeer.address = s.getInetAddress();
-                                newPeer.name = Helper.getNickname(ID);
-                                if (in.readBoolean()) {
-                                    print("Peer joined: " + newPeer.address + ":" + peerPort + ", nickname: " + newPeer.name);
-                                    peers.put(ID, newPeer);
-                                }
-                            }
-                            break;
-                        case "get":
-                            if (peers.isEmpty())
-                                out.writeBoolean(false);
-                            else {
+            try {
+                String cmd = in.readUTF();
+                switch (cmd) {
+                    case "join":
+                        synchronized (peers) {
+                            char ID = in.readChar();
+                            while (peers.containsKey(ID)) {
+                                print("Collision detected");
                                 out.writeBoolean(true);
-                                out.writeUTF(getRandomPeer());
+                                ID = in.readChar();
                             }
-                        case "leave":
-                            synchronized (peers) {
-                                peers.remove(in.readChar());
+                            out.writeBoolean(false);
+                            out.writeUTF(getRandomPeer());
+                            print("Dispatched random peer, waiting for join completion...");
+                            PeerInfo newPeer = new PeerInfo();
+                            newPeer.address = s.getInetAddress();
+                            newPeer.name = Helper.getNickname(ID);
+                            if (in.readBoolean()) {
+                                print("Peer joined: " + newPeer.address + ":" + peerPort + ", nickname: " + newPeer.name);
+                                peers.put(ID, newPeer);
                             }
-                            break;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    dumpStack();
+                        }
+                        break;
+                    case "get":
+                        if (peers.isEmpty())
+                            out.writeBoolean(false);
+                        else {
+                            out.writeBoolean(true);
+                            out.writeUTF(getRandomPeer());
+                        }
+                    case "leave":
+                        synchronized (peers) {
+                            peers.remove(in.readChar());
+                        }
+                        break;
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
+                dumpStack();
             }
         }
     }
 
     private static String getRandomPeer(){
         int i = 0;
-        int randInt = Helper.rng.nextInt(peers.size());
-        for (PeerInfo machine : peers.values()) {
-            if (i == randInt)
-                return machine.address.getHostName();
-            i++;
+        if (!peers.isEmpty()) {
+            int randInt = Helper.rng.nextInt(peers.size());
+            for (PeerInfo machine : peers.values()) {
+                if (i == randInt)
+                    return machine.address.getHostName();
+                i++;
+            }
         }
         return "";
     }
