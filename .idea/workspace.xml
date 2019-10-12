@@ -2,10 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9d3e2026-5806-4ad9-ace8-e646a861d10f" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/1machine.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Helper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Helper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cs555-a2.jar" beforeDir="false" afterPath="$PROJECT_DIR$/cs555-a2.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/StoreData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/StoreData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/start.sh" beforeDir="false" afterPath="$PROJECT_DIR$/start.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -42,6 +44,7 @@
     <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="JAVA" />
     <property name="extract.method.default.visibility" value="private" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="nodejs_package_manager_path" value="npm" />
     <property name="project.structure.last.edited" value="Libraries" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
@@ -101,6 +104,9 @@
       <workItem from="1570226078515" duration="13632000" />
       <workItem from="1570305091172" duration="18630000" />
       <workItem from="1570816909612" duration="7957000" />
+      <workItem from="1570913096041" duration="80000" />
+      <workItem from="1570913183488" duration="1766000" />
+      <workItem from="1570915128904" duration="72000" />
     </task>
     <task id="LOCAL-00001" summary="Implement discovery node">
       <created>1570238006385</created>
@@ -130,7 +136,14 @@
       <option name="project" value="LOCAL" />
       <updated>1570738407531</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Finish first pass at join algorithm, add ring distance">
+      <created>1570850046687</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1570850046687</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -156,6 +169,7 @@
     <MESSAGE value="Implement peer side of discovery join" />
     <MESSAGE value="Routing algorithm fleshed out" />
     <MESSAGE value="working on commandline parser" />
-    <option name="LAST_COMMIT_MESSAGE" value="working on commandline parser" />
+    <MESSAGE value="Finish first pass at join algorithm, add ring distance" />
+    <option name="LAST_COMMIT_MESSAGE" value="Finish first pass at join algorithm, add ring distance" />
   </component>
 </project>

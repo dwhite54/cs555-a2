@@ -106,8 +106,7 @@ class Peer {
     private static class SendHandler extends Thread {
         @Override
         public void run() {
-            String joinNode = getJoinNode();
-            joinSelf(joinNode);
+            joinSelf();
             notify();
 
             boolean exit = false;
@@ -149,101 +148,103 @@ class Peer {
             System.out.println("\thelp: print this list.");
         }
 
-        private void joinSelf(String joinNode) {
-            int rowIdx = 0;
-            while (rowIdx < routingTable.length) { // increment in inner for
-                int myColIdx = Helper.getValueAtHexIdx(me.ID, rowIdx);
-                try (
-                        Socket s = new Socket(joinNode, peerPort);
-                        DataInputStream in = new DataInputStream(s.getInputStream());
-                        DataOutputStream out = new DataOutputStream(s.getOutputStream())
-                ) {
-                    int p;
-                    out.writeUTF("join");
-                    out.writeChar(me.ID);
-                    out.writeInt(rowIdx); // row index we want from the peer
-                    p = in.readInt(); // length of prefix match
-                    for (; rowIdx < p; rowIdx++) {
-                        for (int colIdx = 0; colIdx < HpID; colIdx++) {
-                            char newID = in.readChar();
-                            String newAddress = in.readUTF();
-                            if (colIdx == myColIdx) {
-                                routingTable[rowIdx][colIdx] = me;
-                            } else if (newAddress.equals("")) {
-                                routingTable[rowIdx][colIdx] = null;
-                            } else {
-                                PeerInfo newPeer = new PeerInfo();
-                                newPeer.ID = newID;
-                                newPeer.address = newAddress;
-                                routingTable[rowIdx][colIdx] = newPeer;
+        private void joinSelf() {
+            String joinNode;
+            try (
+                    Socket discoverySocket = new Socket(discoveryMachine, discoveryPort);
+                    DataInputStream din = new DataInputStream(discoverySocket.getInputStream());
+                    DataOutputStream dout = new DataOutputStream(discoverySocket.getOutputStream())
+            ) {
+                dout.writeUTF("join");
+                dout.writeShort(me.ID);
+                while (din.readBoolean()) {  //while collision detected
+                    me.ID = Helper.GenerateID();
+                    print("Collision detected, trying new ID " + Integer.toHexString(me.ID));
+                    dout.writeShort(me.ID);
+                }
+                joinNode = din.readUTF();
+
+                //route self through table, getting rows of routing table along the way
+                int rowIdx = 0;
+                while (rowIdx < routingTable.length) { // increment in inner for
+                    int myColIdx = Helper.getValueAtHexIdx(me.ID, rowIdx);
+                    try (
+                            Socket peerSocket = new Socket(joinNode, peerPort);
+                            DataInputStream pin = new DataInputStream(peerSocket.getInputStream());
+                            DataOutputStream pout = new DataOutputStream(peerSocket.getOutputStream())
+                    ) {
+                        int p;
+                        pout.writeUTF("join");
+                        pout.writeChar(me.ID);
+                        pout.writeInt(rowIdx); // row index we want from the peer
+                        p = pin.readInt(); // length of prefix match
+                        for (; rowIdx < p; rowIdx++) {
+                            for (int colIdx = 0; colIdx < HpID; colIdx++) {
+                                char newID = pin.readChar();
+                                String newAddress = pin.readUTF();
+                                if (colIdx == myColIdx) {
+                                    routingTable[rowIdx][colIdx] = me;
+                                } else if (newAddress.equals("")) {
+                                    routingTable[rowIdx][colIdx] = null;
+                                } else {
+                                    PeerInfo newPeer = new PeerInfo();
+                                    newPeer.ID = newID;
+                                    newPeer.address = newAddress;
+                                    routingTable[rowIdx][colIdx] = newPeer;
+                                }
+                            }
+                            rowIdx++;
+                        }
+                        String nextNode = pin.readUTF();
+                        if (nextNode.equals(joinNode)) {//the one we just talked to is the best match
+                            //now we need the leaf set from the last one we talked to (closest)
+                            leftLeaf.ID = pin.readChar();
+                            leftLeaf.address = pin.readUTF();
+                            rightLeaf.ID = pin.readChar();
+                            rightLeaf.address = pin.readUTF();
+                            break;
+                        }
+                        joinNode = nextNode;
+                    } catch(IOException e){
+                        dout.writeBoolean(false);
+                        e.printStackTrace();
+                        dumpStack();
+                        return;
+                    }
+                }
+
+                //now update all nodes in our routing table and leaf sets to use us
+                for (PeerInfo[] row : routingTable) {
+                    for (PeerInfo cell : row) {
+                        if (cell != null) {
+                            try (
+                                    var s = new Socket(cell.address, peerPort);
+                                    var out = new DataOutputStream(s.getOutputStream())
+                            ) {
+                                out.writeUTF("propagate");
+                                out.writeChar(me.ID);
+                                out.writeUTF(me.address);
+                                writeRouting(out);
+                                out.writeChar(leftLeaf.ID);
+                                out.writeUTF(leftLeaf.address);
+                                out.writeChar(rightLeaf.ID);
+                                out.writeUTF(rightLeaf.address);
+                            } catch (IOException e) {
+                                dout.writeBoolean(false);
+                                e.printStackTrace();
+                                dumpStack();
+                                return;
                             }
                         }
-                        rowIdx++;
-                    }
-                    String nextNode = in.readUTF();
-                    if (nextNode.equals(joinNode)) {//the one we just talked to is the best match
-                        //now we need the leaf set from the last one we talked to (closest)
-                        leftLeaf.ID = in.readChar();
-                        leftLeaf.address = in.readUTF();
-                        rightLeaf.ID = in.readChar();
-                        rightLeaf.address = in.readUTF();
-                        break;
-                    }
-                    joinNode = nextNode;
-                } catch(IOException e){
-                    e.printStackTrace();
-                    dumpStack();
-                }
-            }
-
-            //now update all nodes in our routing table and leaf sets to use us
-            for (PeerInfo[] row : routingTable) {
-                for (PeerInfo cell : row) {
-                    if (cell != null) {
-                        try (
-                                var s = new Socket(cell.address, peerPort);
-                                var out = new DataOutputStream(s.getOutputStream())
-                        ) {
-                            out.writeUTF("propagate");
-                            out.writeChar(me.ID);
-                            out.writeUTF(me.address);
-                            writeRouting(out);
-                            out.writeChar(leftLeaf.ID);
-                            out.writeUTF(leftLeaf.address);
-                            out.writeChar(rightLeaf.ID);
-                            out.writeUTF(rightLeaf.address);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            dumpStack();
-                        }
                     }
                 }
-            }
 
-            //finally done joining!
-        }
-
-        private String getJoinNode() {
-            String joinNode = null;
-            try (
-                    Socket s = new Socket(discoveryMachine, discoveryPort);
-                    DataInputStream in = new DataInputStream(s.getInputStream());
-                    DataOutputStream out = new DataOutputStream(s.getOutputStream())
-            ) {
-                out.writeUTF("join");
-                out.writeShort(me.ID);
-                if (in.readBoolean()) {
-                    joinNode = in.readUTF();
-                } else { //collision detected
-                    me.ID = Helper.GenerateID();
-                    getJoinNode();
-                }
+                dout.writeBoolean(true);
             } catch (IOException e) {
                 print("Failed getting join node from discovery.");
                 e.printStackTrace();
                 dumpStack();
             }
-            return joinNode;
         }
     }
 
@@ -268,7 +269,6 @@ class Peer {
             try {
                 String cmd = in.readUTF();
                 char ID = in.readChar();
-                PeerInfo bestPeer;
                 switch (cmd) {
                     case "insert":
                         handleInsert(ID);
