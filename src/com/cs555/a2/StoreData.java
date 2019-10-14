@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 class StoreData {
@@ -20,7 +21,7 @@ class StoreData {
         this.peerPort = peerPort;
     }
 
-    private void print(String s) {
+    private static void print(String s) {
         System.out.println(pre+s);
     }
 
@@ -72,6 +73,8 @@ class StoreData {
             return false;
         }
         char contentID = Helper.getDigest(filename.getBytes());
+        char peerID;
+        print("File digest: " + Integer.toHexString(contentID));
         String peerHost;
         try (
                 Socket s = new Socket(discoveryMachine, discoveryPort);
@@ -79,8 +82,11 @@ class StoreData {
                 DataOutputStream out = new DataOutputStream(s.getOutputStream())
         ) {
             out.writeUTF("get");
-            if (in.readBoolean())
+            if (in.readBoolean()) {
+                peerID = in.readChar();
                 peerHost = in.readUTF();
+                print("Connecting to random peer " + peerHost);
+            }
             else {
                 print("Discovery has no peers");
                 return false;
@@ -91,6 +97,11 @@ class StoreData {
             return false;
         }
 
+        ArrayList<Character> joinIDs = new ArrayList<>();
+        joinIDs.add(peerID);
+        ArrayList<String> joinNodes = new ArrayList<>();
+        joinNodes.add(peerHost);
+        int i = 0;
         while (true) {
             try (
                     Socket s = new Socket(peerHost, peerPort);
@@ -99,6 +110,7 @@ class StoreData {
             ) {
                 out.writeUTF("insert");
                 out.writeChar(contentID);
+                out.writeInt(++i);
                 String newPeerHost = in.readUTF();
                 if (newPeerHost.equals(peerHost)) {  // this node has the file
                     out.writeUTF(filename);
@@ -106,7 +118,9 @@ class StoreData {
                     out.write(contents);
                     break;
                 } else {
+                    joinIDs.add(in.readChar());
                     peerHost = newPeerHost;
+                    joinNodes.add(peerHost);
                 }
             } catch (IOException e) {
                 print("Error opening socket connection to peer " + peerHost + ":" + peerPort);
@@ -114,7 +128,16 @@ class StoreData {
                 return false;
             }
         }
+        printTrace(joinIDs, joinNodes);
         return true;
+    }
+
+    private static void printTrace(ArrayList<Character> joinIDs, ArrayList<String> joinNodes) {
+        if (joinIDs.size() != joinNodes.size()) {
+            print("Bad call of printTrace");
+        }
+        for (int i = 0; i < joinIDs.size(); i++)
+            print("Trace: " + Integer.toHexString(joinIDs.get(i)) + "@" + joinNodes.get(i));
     }
 
     private void printHelp() {

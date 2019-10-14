@@ -54,8 +54,8 @@ class DiscoveryNode {
                 print("Known peers are:");
                 for (var entry : peers.entrySet()){
                     var val = entry.getValue();
-                    String key = Integer.toHexString(entry.getKey());
-                    print(val.name + "@" + val.address + ":" + peerPort + " id: " + key);
+                    String ID = Integer.toHexString(entry.getKey());
+                    print(String.format("%s@%s:%d id: %s", val.name, val.address, peerPort, ID));
                 }
             }
         }
@@ -110,6 +110,7 @@ class DiscoveryNode {
         public void run() {
             try {
                 String cmd = in.readUTF();
+                char randID;
                 switch (cmd) {
                     case "join":
                         synchronized (peers) {
@@ -120,13 +121,16 @@ class DiscoveryNode {
                                 ID = in.readChar();
                             }
                             out.writeBoolean(false);
-                            out.writeUTF(getRandomPeer());
+                            randID = getRandomPeer();
+                            out.writeChar(randID);
+                            out.writeUTF(peers.get(randID).address.getHostName());
                             print("Dispatched random peer, waiting for join completion...");
                             PeerInfo newPeer = new PeerInfo();
                             newPeer.address = s.getInetAddress();
                             newPeer.name = Helper.getNickname(ID);
                             if (in.readBoolean()) {
-                                print("Peer joined: " + newPeer.address + ":" + peerPort + ", nickname: " + newPeer.name);
+                                print(String.format("Peer joined: %s %s:%d, nickname: %s",
+                                        Integer.toHexString(ID), newPeer.address, peerPort, newPeer.name));
                                 peers.put(ID, newPeer);
                             }
                         }
@@ -136,11 +140,21 @@ class DiscoveryNode {
                             out.writeBoolean(false);
                         else {
                             out.writeBoolean(true);
-                            out.writeUTF(getRandomPeer());
+                            randID = getRandomPeer();
+                            out.writeChar(randID);
+                            out.writeUTF(peers.get(randID).address.getHostName());
                         }
                     case "leave":
                         synchronized (peers) {
-                            peers.remove(in.readChar());
+                            char leaveID = in.readChar();
+                            PeerInfo leavingPeer = peers.get(leaveID);
+                            if (leavingPeer == null)
+                                print("Removing peer which is not present " + Integer.toHexString(leaveID));
+                            else {
+                                print(String.format("Peer left: %s %s:%d, nickname: %s",
+                                        Integer.toHexString(leaveID), leavingPeer.address, peerPort, leavingPeer.name));
+                                peers.remove(leaveID);
+                            }
                         }
                         break;
                 }
@@ -151,16 +165,16 @@ class DiscoveryNode {
         }
     }
 
-    private static String getRandomPeer(){
+    private static char getRandomPeer(){
         int i = 0;
         if (!peers.isEmpty()) {
             int randInt = Helper.rng.nextInt(peers.size());
-            for (PeerInfo machine : peers.values()) {
+            for (char ID : peers.keySet()) {
                 if (i == randInt)
-                    return machine.address.getHostName();
+                    return ID;
                 i++;
             }
         }
-        return "";
+        return 0;
     }
 }

@@ -2,11 +2,16 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9d3e2026-5806-4ad9-ace8-e646a861d10f" name="Default Changelist" comment="IntelliJ is crashing">
+      <change afterPath="$PROJECT_DIR$/.idea/runConfigurations/discovery.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/runConfigurations/peer.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/runConfigurations/storedata.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cmd.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cs555-a2.jar" beforeDir="false" afterPath="$PROJECT_DIR$/cs555-a2.jar" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Helper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Helper.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/start.sh" beforeDir="false" afterPath="$PROJECT_DIR$/start.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/StoreData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/StoreData.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -47,7 +52,7 @@
     <property name="project.structure.last.edited" value="Libraries" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
-    <property name="settings.editor.selected.configurable" value="preferences.general" />
+    <property name="settings.editor.selected.configurable" value="ics" />
   </component>
   <component name="RecentsManager">
     <key name="MoveMembersDialog.RECENTS_KEY">
@@ -69,22 +74,12 @@
       </list>
     </option>
   </component>
-  <component name="RunManager">
-    <configuration name="Main" type="Application" factoryName="Application" temporary="true">
-      <option name="MAIN_CLASS_NAME" value="com.cs555.a2.Main" />
-      <module name="cs555-a2" />
-      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
-      <RunnerSettings RunnerId="Run" />
-      <ConfigurationWrapper RunnerId="Run" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Application.Main" />
-      </list>
-    </recent_temporary>
+  <component name="RunManager" selected="Application.peer">
+    <list>
+      <item itemvalue="Application.discovery" />
+      <item itemvalue="Application.peer" />
+      <item itemvalue="Application.storedata" />
+    </list>
   </component>
   <component name="SvnConfiguration">
     <configuration />
@@ -108,6 +103,7 @@
       <workItem from="1570915128904" duration="1439000" />
       <workItem from="1570916709048" duration="41000" />
       <workItem from="1570916880047" duration="475000" />
+      <workItem from="1571005679069" duration="12365000" />
     </task>
     <task id="LOCAL-00001" summary="Implement discovery node">
       <created>1570238006385</created>

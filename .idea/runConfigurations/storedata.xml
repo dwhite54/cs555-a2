@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="storedata" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="com.cs555.a2.Main" />
+    <module name="cs555-a2" />
+    <option name="PROGRAM_PARAMETERS" value=" --mode storedata --discovery-port 50292 --discovery-machine chip.cs.colostate.edu --peer-port 50293" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
