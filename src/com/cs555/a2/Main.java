@@ -65,7 +65,7 @@ public class Main {
     private static String discoveryMachine = "";
     private static char peerId = Helper.GenerateID();
 
-    public static void main(String[] args) throws IOException, InterruptedException, NoSuchAlgorithmException {
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         if (args.length == 0 || args[0].equals("--help")) {
             printUsage();
             System.exit(0);
@@ -110,11 +110,11 @@ public class Main {
 
         switch (mode) {
             case DISCOVERY:
-                DiscoveryNode d = new DiscoveryNode(discoveryPort, peerPort);
+                DiscoveryNode d = new DiscoveryNode(discoveryPort);
                 d.run();
                 break;
             case STOREDATA:
-                StoreData s = new StoreData(discoveryMachine, discoveryPort, peerPort);
+                StoreData s = new StoreData(discoveryMachine, discoveryPort);
                 s.run();
                 break;
             case PEER:

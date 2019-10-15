@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="9d3e2026-5806-4ad9-ace8-e646a861d10f" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/3machines.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cs555-a2.jar" beforeDir="false" afterPath="$PROJECT_DIR$/cs555-a2.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" afterDir="false" />
+    <list default="true" id="9d3e2026-5806-4ad9-ace8-e646a861d10f" name="Default Changelist" comment="Adding port to peerinfo">
+      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Main.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/StoreData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/StoreData.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -100,7 +96,7 @@
       <workItem from="1570916709048" duration="41000" />
       <workItem from="1570916880047" duration="475000" />
       <workItem from="1571005679069" duration="12388000" />
-      <workItem from="1571071282081" duration="8678000" />
+      <workItem from="1571071282081" duration="8922000" />
     </task>
     <task id="LOCAL-00001" summary="Implement discovery node">
       <created>1570238006385</created>
@@ -158,7 +154,14 @@
       <option name="project" value="LOCAL" />
       <updated>1571018315027</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Adding port to peerinfo">
+      <created>1571099337919</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1571099337919</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -188,7 +191,8 @@
     <MESSAGE value="force sequential joins, begin testing" />
     <MESSAGE value="IntelliJ is crashing" />
     <MESSAGE value="lots of stuff, code is finally testable" />
-    <option name="LAST_COMMIT_MESSAGE" value="lots of stuff, code is finally testable" />
+    <MESSAGE value="Adding port to peerinfo" />
+    <option name="LAST_COMMIT_MESSAGE" value="Adding port to peerinfo" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

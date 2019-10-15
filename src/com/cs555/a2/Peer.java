@@ -533,10 +533,11 @@ class Peer {
                 print(String.format("New peer closer to file %s named %s size %d, migrating.",
                         Integer.toHexString(fileID), filename, fileContents.length));
                 out.write(fileContents);
-                file.delete();
-                files.remove(fileID);
+                if (file.delete())
+                    files.remove(fileID);
+                else
+                    print("error removing file");
             }
-            //TODO print contents if changed
         }
 
         private PeerInfo route(char ID) throws IOException {
