@@ -41,6 +41,8 @@ class Peer {
         Peer.me.ID = ID;
         Peer.me.address = InetAddress.getLocalHost().getCanonicalHostName();
         Peer.me.port = peerPort;
+        largerLeaf = me;
+        smallerLeaf = me;
         ss = new ServerSocket(me.port);
         final Thread mainThread = Thread.currentThread();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -54,11 +56,7 @@ class Peer {
     }
 
     private static void print(String s) {
-        if (me != null)
-            System.out.printf("Peer %s@%s:%d: %s%n",
-                    Integer.toHexString(me.ID), me.address, me.port, s);
-        else
-            System.out.println("Peer NULL: " + s);
+        System.out.printf("Peer %s@%s:%d: %s%n", Integer.toHexString(me.ID), me.address, me.port, s);
     }
 
     private static void printTable() {
@@ -92,16 +90,10 @@ class Peer {
 
     private static void printLeaves() {
         String printString = "Leaves:";
-        if (smallerLeaf != null)
-            printString += String.format(" left: %s@%s:%d",
-                    Integer.toHexString(smallerLeaf.ID), smallerLeaf.address, smallerLeaf.port);
-        else
-            printString += " left: null";
-        if (largerLeaf != null)
-            printString += String.format(" right: %s@%s:%d",
-                    Integer.toHexString(largerLeaf.ID), largerLeaf.address, largerLeaf.port);
-        else
-            printString += " right: null";
+        printString += String.format(" left: %s@%s:%d",
+                Integer.toHexString(smallerLeaf.ID), smallerLeaf.address, smallerLeaf.port);
+        printString += String.format(" right: %s@%s:%d",
+                Integer.toHexString(largerLeaf.ID), largerLeaf.address, largerLeaf.port);
         print(printString);
     }
 
@@ -452,7 +444,6 @@ class Peer {
 
         private void handleJoin(char ID, int hop) throws IOException {
             PeerInfo bestPeer;
-            //int rowIdx = in.readInt();
             int p = Helper.getLongestCommonPrefixLength(me.ID, ID);
             out.writeInt(p);
             for (int i = 0; i <= p; i++) {
@@ -471,13 +462,14 @@ class Peer {
             if (bestPeer.ID == me.ID) {
                 print(String.format("Received 'join' request for ID %s, hop %d, and I am closest.",
                         Integer.toHexString(ID), hop));
-                int meDist = Helper.ringDistance(me.ID, ID);
+                int largerLeafDist = Helper.ringDistance(largerLeaf.ID, ID);
+                int smallerLeafDist = Helper.ringDistance(smallerLeaf.ID, ID);
                 // assume new is within bounds of our leaf set (otherwise would not be closest to us)
-                if (meDist > 0) {  // new is clockwise of us
+                if (largerLeafDist < smallerLeafDist) {  //closer to larger
                     writePeer(out, me);
-                    writePeer(out, Objects.requireNonNullElseGet(largerLeaf, () -> me));
+                    writePeer(out, largerLeaf);
                 } else {  // new is anticlockwise of us
-                    writePeer(out, Objects.requireNonNullElseGet(smallerLeaf, () -> me));
+                    writePeer(out, smallerLeaf);
                     writePeer(out, me);
                 }
                 //we don't update our leaves yet, as that message will come in the "joincomplete"
@@ -503,19 +495,16 @@ class Peer {
                 printTable();
             }
 
-            // if they're closer than one of our leaves, we replace that leaf with them
-            // (we don't need to worry about propagating this to OUR leaves, since they receive this same message)
-            int newDist = Helper.ringDistance(me.ID, newNode.ID);
-
             boolean leavesChanged = false;
             //if closer than left, replace left with new
-            //if closer than right, replace right with new
-            if (smallerLeaf == null || (newDist < 0 && Helper.ringDistance(smallerLeaf.ID, newNode.ID) >= 0)) {
+            // (we don't need to worry about propagating this to OUR leaves, since they receive this same message)
+            if (Helper.isBetween(smallerLeaf.ID, newNode.ID, me.ID)) {
                 smallerLeaf = newNode;
                 leavesChanged = true;
             }
 
-            if (largerLeaf == null || (newDist >= 0 && Helper.ringDistance(largerLeaf.ID, newNode.ID) <= 0)) {
+            //if closer than right, replace right with new
+            if (Helper.isBetween(me.ID, newNode.ID, largerLeaf.ID)) {
                 largerLeaf = newNode;
                 leavesChanged = true;
             }
@@ -552,22 +541,8 @@ class Peer {
         }
 
         private PeerInfo route(char ID) throws IOException {
-            if (smallerLeaf == null || largerLeaf == null) //initial condition only
-                return me;
-
-            int smallLeafDist = Helper.posRingDistance(smallerLeaf.ID, me.ID);
-            int largeLeafDist = Helper.posRingDistance(me.ID, largerLeaf.ID);
-            int meTargetDist = Helper.ringDistance(me.ID, ID);
-            if (meTargetDist > 0 && meTargetDist < largeLeafDist) {
-                if (meTargetDist < largeLeafDist / 2)
-                    return me;
-                else
-                    return largerLeaf;
-            } else if (meTargetDist <= 0 && -meTargetDist < smallLeafDist) {
-                if (-meTargetDist < smallLeafDist / 2)
-                    return me;
-                else
-                    return smallerLeaf;
+            if (Helper.isBetween(smallerLeaf.ID, ID, largerLeaf.ID)) {
+                return getClosestLeaf(ID);
             } else  //if beyond leaf of closest side, use table
                 return routeWithTable(ID);
         }
@@ -589,8 +564,7 @@ class Peer {
                 //search leaf set and current row
                 bestPeer = getClosestLeaf(ID);
                 for (PeerInfo rowPeer : routingTable[p]) {
-                    if (rowPeer != null && Math.abs(Helper.ringDistance(rowPeer.ID, ID)) <
-                                    Math.abs(Helper.ringDistance(bestPeer.ID, ID)))
+                    if (rowPeer != null && Helper.ringDistance(rowPeer.ID, ID) < Helper.ringDistance(bestPeer.ID, ID))
                         bestPeer = rowPeer;
                 }
             }
@@ -598,19 +572,15 @@ class Peer {
         }
 
         private PeerInfo getClosestLeaf(char ID) {
-            if (smallerLeaf == null && largerLeaf == null) // all null, we may be alone!
+            int meDist = Helper.ringDistance(me.ID, ID);
+            int largerLeafDist = Helper.ringDistance(largerLeaf.ID, ID);
+            int smallerLeafDist = Helper.ringDistance(smallerLeaf.ID, ID);
+            if (meDist < largerLeafDist && meDist < smallerLeafDist) {
                 return me;
-            else if (smallerLeaf == null) // large isn't null, small is
+            } else if (largerLeafDist < smallerLeafDist) {
                 return largerLeaf;
-            else if (largerLeaf == null) //small isn't null, large is
+            } else {
                 return smallerLeaf;
-            else { //both non-null, do comparison
-                int leftDist = Math.abs(Helper.ringDistance(smallerLeaf.ID, ID));
-                int rightDist = Helper.ringDistance(largerLeaf.ID, ID);
-                if (Math.abs(leftDist) < Math.abs(rightDist))
-                    return smallerLeaf;
-                else
-                    return largerLeaf;
             }
         }
     }

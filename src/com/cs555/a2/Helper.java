@@ -53,44 +53,17 @@ class Helper {
     // distance from ID1 to ID2, preserving sign (negative means ID1 clockwise of ID2 on clockwise-increasing ring)
     static int ringDistance(char a, char b) {
         int simple = Math.abs(a-b);
-        int overflow = Character.MAX_VALUE + 1 - simple;
-        if (simple < overflow) {
-            if (a > b) {
-                return -simple;
-            } else {
-                return simple;
-            }
-        } else {
-            if (a > b) {
-                return overflow;
-            } else {
-                return -overflow;
-            }
-        }
+        return Integer.min(simple, Character.MAX_VALUE + 1 - simple);
     }
 
-    static int negRingDistance(char a, char b) {
-        int dist = ringDistance(a, b);
-        if (dist < 0)
-            return dist;
-        else
-            return dist - Character.MAX_VALUE;
+    static boolean isBetween(char lower, char test, char upper) {
+        if (lower == upper)
+            return true;
+        else if (lower < upper)
+            return (lower <= test && test <= upper);
+        else // lower > upper, i.e. overflow boundary is between
+            return (lower <= test || test <= upper);
     }
-
-    static int posRingDistance(char a, char b) {
-        int dist = ringDistance(a, b);
-        if (dist > 0)
-            return dist;
-        else
-            return dist + Character.MAX_VALUE;
-    }
-//
-//    //is ID2 between the other two on a ring
-//    static boolean isBetween(char ID1, char ID2, char ID3) {
-//        int oneTwo = Helper.ringDistance(ID1, ID2);
-//        int twoThree = Helper.ringDistance(ID2, ID3);
-//        return oneTwo > 0 && twoThree < 0 || oneTwo < 0 && twoThree > 0;
-//    }
 
     private static final String[] nicknames = {"Abby", "Abe", "Abram", "Aby", "Ada", "Adrian", "Aggie", "Aggy",
             "Aileen", "Ailie", "Alan", "Alec", "Aleck", "Alex", "Alf", "Alfie", "Algy", "Alick", "Allie", "Ally",
