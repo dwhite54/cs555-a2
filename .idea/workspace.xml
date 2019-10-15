@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="9d3e2026-5806-4ad9-ace8-e646a861d10f" name="Default Changelist" comment="IntelliJ is crashing">
-      <change afterPath="$PROJECT_DIR$/.idea/runConfigurations/discovery.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/runConfigurations/peer.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/runConfigurations/storedata.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cmd.sh" afterDir="false" />
+    <list default="true" id="9d3e2026-5806-4ad9-ace8-e646a861d10f" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/3machines.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cs555-a2.jar" beforeDir="false" afterPath="$PROJECT_DIR$/cs555-a2.jar" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Helper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Helper.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/StoreData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/StoreData.java" afterDir="false" />
     </list>
@@ -52,7 +48,7 @@
     <property name="project.structure.last.edited" value="Libraries" />
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
-    <property name="settings.editor.selected.configurable" value="ics" />
+    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
   </component>
   <component name="RecentsManager">
     <key name="MoveMembersDialog.RECENTS_KEY">
@@ -103,7 +99,8 @@
       <workItem from="1570915128904" duration="1439000" />
       <workItem from="1570916709048" duration="41000" />
       <workItem from="1570916880047" duration="475000" />
-      <workItem from="1571005679069" duration="12365000" />
+      <workItem from="1571005679069" duration="12388000" />
+      <workItem from="1571071282081" duration="8678000" />
     </task>
     <task id="LOCAL-00001" summary="Implement discovery node">
       <created>1570238006385</created>
@@ -154,7 +151,14 @@
       <option name="project" value="LOCAL" />
       <updated>1570915308911</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="lots of stuff, code is finally testable">
+      <created>1571018315027</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1571018315027</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -183,6 +187,18 @@
     <MESSAGE value="Finish first pass at join algorithm, add ring distance" />
     <MESSAGE value="force sequential joins, begin testing" />
     <MESSAGE value="IntelliJ is crashing" />
-    <option name="LAST_COMMIT_MESSAGE" value="IntelliJ is crashing" />
+    <MESSAGE value="lots of stuff, code is finally testable" />
+    <option name="LAST_COMMIT_MESSAGE" value="lots of stuff, code is finally testable" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/com/cs555/a2/Peer.java</url>
+          <line>439</line>
+          <option name="timeStamp" value="5" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

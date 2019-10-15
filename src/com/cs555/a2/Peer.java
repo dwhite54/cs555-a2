@@ -17,29 +17,29 @@ import static com.cs555.a2.Helper.HpID;
 class Peer {
     static class PeerInfo {
         char ID;
-        String address = "";
+        String address;
+        int port;
     }
 
     private static ServerSocket ss;
     private static boolean shutdown = false;
-    private static int peerPort;
     private static String discoveryMachine;
     private static int discoveryPort;
-    private static PeerInfo me = new PeerInfo();
+    private static PeerInfo me = null;
     private static PeerInfo[][] routingTable = new PeerInfo[HpID][BpH * 4];
     private static ConcurrentHashMap<Character, String> files = new ConcurrentHashMap<>();
-    private static PeerInfo rightLeaf = new PeerInfo();
-    private static PeerInfo leftLeaf = new PeerInfo();
+    private static PeerInfo rightLeaf = null;
+    private static PeerInfo leftLeaf = null;
     private static boolean hasLeft = false;
-    private static final String pre = "Peer" + Integer.toHexString(me.ID) + "@" + me.address + ": ";
 
     Peer(String discoveryMachine, int discoveryPort, int peerPort, char ID) throws IOException {
         Peer.discoveryMachine = discoveryMachine;
         Peer.discoveryPort = discoveryPort;
-        Peer.peerPort = peerPort;
+        Peer.me = new PeerInfo();
         Peer.me.ID = ID;
-        Peer.me.address = InetAddress.getLocalHost().getHostName();
-        ss = new ServerSocket(Peer.peerPort);
+        Peer.me.address = InetAddress.getLocalHost().getCanonicalHostName();
+        Peer.me.port = peerPort;
+        ss = new ServerSocket(me.port);
         final Thread mainThread = Thread.currentThread();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
@@ -52,34 +52,52 @@ class Peer {
     }
 
     private static void print(String s) {
-        System.out.println(pre+s);
+        if (me != null)
+            System.out.printf("Peer %s@%s:%d: %s%n",
+                    Integer.toHexString(me.ID), me.address, me.port, s);
+        else
+            System.out.println("Peer NULL: " + s);
     }
 
     private static void printTable() {
         print("ROUTING TABLE");
+        System.out.print("|  ");
+        for (int i = 0; i < BpH * 4; i++)
+            System.out.print(Integer.toHexString(i) + "   |  ");
+        System.out.println();
         for (PeerInfo[] row : routingTable) {
             System.out.print("| ");
             for (PeerInfo cell : row) {
-                System.out.print(Integer.toHexString(cell.ID) + " | ");
+                if (cell != null)
+                    System.out.print(Integer.toHexString(cell.ID) + " | ");
+                else
+                    System.out.print("NULL | ");
             }
             System.out.println();
         }
     }
 
     private static void printFiles() {
-        print("FILES");
-        for (var file : files.entrySet())
-            print(Integer.toHexString(file.getKey()) + ": " + file.getValue());
+        if (files.isEmpty())
+            print("FILES: <EMPTY>");
+        else {
+            print("FILES: ");
+            for (var file : files.entrySet())
+                System.out.print(Integer.toHexString(file.getKey()) + ": " + file.getValue());
+            System.out.println();
+        }
     }
 
     private static void printLeaves() {
         String printString = "Leaves:";
         if (leftLeaf != null)
-            printString += " left: " + Integer.toHexString(leftLeaf.ID) + "@" + leftLeaf.address;
+            printString += String.format(" left: %s@%s:%d",
+                    Integer.toHexString(leftLeaf.ID), leftLeaf.address, leftLeaf.port);
         else
             printString += " left: null";
         if (rightLeaf != null)
-            printString += " right: " + Integer.toHexString(rightLeaf.ID) + "@" + rightLeaf.address;
+            printString += String.format(" right: %s@%s:%d",
+                    Integer.toHexString(rightLeaf.ID), rightLeaf.address, rightLeaf.port);
         else
             printString += " right: null";
         print(printString);
@@ -146,25 +164,28 @@ class Peer {
                 DataOutputStream dout = new DataOutputStream(discoverySocket.getOutputStream())
         ) {
             dout.writeUTF("join");
-            dout.writeShort(me.ID);
+            dout.writeChar(me.ID);
             while (din.readBoolean()) {  //while collision detected
                 me.ID = Helper.GenerateID();
                 print("Collision detected, trying new ID " + Integer.toHexString(me.ID));
-                dout.writeShort(me.ID);
+                dout.writeChar(me.ID);
             }
             initRouting();
-            joinNodes.add(din.readUTF());
+            dout.writeUTF(me.address);
+            dout.writeInt(me.port);
             joinIDs.add(din.readChar());
+            joinNodes.add(din.readUTF() + ":" + din.readInt());
             if (!joinNodes.get(0).equals("")) { //else we are the first
-                print("Joining via " + Integer.toHexString(joinIDs.get(0)) + "@" + joinNodes.get(0) + ":" + peerPort);
+                print("Joining via " + Integer.toHexString(joinIDs.get(0)) + "@" + joinNodes.get(0));
 
                 //route self through table, getting rows of routing table along the way
                 int rowIdx = 0;
                 int hop = 0;
                 while (rowIdx < routingTable.length) { // increment in inner for
                     int myColIdx = Helper.getValueAtHexIdx(me.ID, rowIdx);
+                    String[] joinAddress = joinNodes.get(joinNodes.size() - 1).split(":");
                     try (
-                            Socket peerSocket = new Socket(joinNodes.get(joinNodes.size() - 1), peerPort);
+                            Socket peerSocket = new Socket(joinAddress[0], Integer.parseInt(joinAddress[1]));
                             DataInputStream pin = new DataInputStream(peerSocket.getInputStream());
                             DataOutputStream pout = new DataOutputStream(peerSocket.getOutputStream())
                     ) {
@@ -174,7 +195,7 @@ class Peer {
                         pout.writeInt(rowIdx); // row index we want from the peer
                         int p = pin.readInt(); // length of prefix match
                         print("Matched " + p + " rows");
-                        for (; rowIdx < p; rowIdx++) {
+                        for (; rowIdx <= p; rowIdx++) {
                             for (int colIdx = 0; colIdx < HpID; colIdx++) {
                                 char newID = pin.readChar();
                                 String newAddress = pin.readUTF();
@@ -189,23 +210,28 @@ class Peer {
                             }
                             rowIdx++;
                         }
-                        String nextNode = pin.readUTF();
-                        if (nextNode.equals(joinNodes.get(joinNodes.size() - 1))) {//the one we just talked to is the best match
+                        String nextAddress = pin.readUTF() + pin.readInt();
+                        if (nextAddress.equals(joinNodes.get(joinNodes.size() - 1))) {//the one we just talked to is the best match
                             //now we need the leaf set from the last one we talked to (closest)
+                            leftLeaf = new PeerInfo();
                             leftLeaf.ID = pin.readChar();
                             leftLeaf.address = pin.readUTF();
+                            leftLeaf.port = pin.readInt();
+                            rightLeaf = new PeerInfo();
                             rightLeaf.ID = pin.readChar();
                             rightLeaf.address = pin.readUTF();
+                            rightLeaf.port = pin.readInt();
                             break;
                         }
                         joinIDs.add(pin.readChar());
-                        joinNodes.add(nextNode);
+                        joinNodes.add(nextAddress);
                     } catch (IOException e) {
                         dout.writeBoolean(false);
                         e.printStackTrace();
+                        return;
                     }
                 }
-                propagateSelf(din, 0);
+                propagateSelf(din);
 
             } else {
                 print("We are the first in the network.");
@@ -222,7 +248,8 @@ class Peer {
         printTrace(joinIDs, joinNodes);
     }
 
-    private void propagateSelf(DataInputStream din, int hop) throws IOException {
+    private void propagateSelf(DataInputStream din) throws IOException {
+        int hop = 0;
         for (PeerInfo[] row : routingTable) {
             for (PeerInfo cell : row) {
                 if (cell != null) {
@@ -236,18 +263,21 @@ class Peer {
 
     private void sendContents(DataInputStream din, int hop, PeerInfo peerInfo) throws IOException {
         try (
-                var s = new Socket(peerInfo.address, peerPort);
+                var s = new Socket(peerInfo.address, peerInfo.port);
                 var out = new DataOutputStream(s.getOutputStream())
         ) {
             out.writeUTF("propagate");
             out.writeChar(me.ID);
             out.writeInt(++hop);
             out.writeUTF(me.address);
+            out.writeInt(me.port);
             writeRouting(out);
             out.writeChar(leftLeaf.ID);
             out.writeUTF(leftLeaf.address);
+            out.writeInt(leftLeaf.port);
             out.writeChar(rightLeaf.ID);
             out.writeUTF(rightLeaf.address);
+            out.writeInt(rightLeaf.port);
             int numFiles = din.readInt();
             for (int i = 0; i < numFiles; i++) {
                 char fileID = din.readChar();
@@ -349,6 +379,7 @@ class Peer {
                         PeerInfo newNode = new PeerInfo();
                         newNode.ID = ID;
                         newNode.address = in.readUTF();
+                        newNode.port = in.readInt();
                         handlePropagate(newNode);
                         break;
                 }
@@ -365,6 +396,7 @@ class Peer {
             PeerInfo bestPeer;
             bestPeer = route(ID);
             out.writeUTF(bestPeer.address);
+            out.writeInt(bestPeer.port);
             if (bestPeer.ID == me.ID) {
                 print(String.format("Received 'insert' request for ID %s, hop %d, and I am closest.",
                         Integer.toHexString(ID), hop));
@@ -393,7 +425,7 @@ class Peer {
             int rowIdx = in.readInt();
             int p = Helper.getLongestCommonPrefixLength(me.ID, ID);
             out.writeInt(p);
-            for (int i = rowIdx; i < p; i++) {
+            for (int i = rowIdx; i <= p; i++) {
                 for (PeerInfo cell : routingTable[i]) {
                     if (cell == null) {
                         out.writeChar(0);
@@ -406,6 +438,7 @@ class Peer {
             }
             bestPeer = route(ID);
             out.writeUTF(bestPeer.address);
+            out.writeInt(bestPeer.port);
             //if we are closest to this one, share leaf set and propagate
             if (bestPeer.ID == me.ID) {
                 print(String.format("Received 'join' request for ID %s, hop %d, and I am closest.",
@@ -415,18 +448,34 @@ class Peer {
                 if (meDist > 0) {  // new is clockwise of us
                     out.writeChar(me.ID);
                     out.writeUTF(me.address);
-                    out.writeChar(rightLeaf.ID);
-                    out.writeUTF(rightLeaf.address);
+                    out.writeInt(me.port);
+                    if (rightLeaf != null) {
+                        out.writeChar(rightLeaf.ID);
+                        out.writeUTF(rightLeaf.address);
+                        out.writeInt(rightLeaf.port);
+                    } else {
+                        out.writeChar(me.ID);
+                        out.writeUTF(me.address);
+                        out.writeInt(me.port);
+                    }
                 } else {  // new is anticlockwise of us
-                    out.writeChar(leftLeaf.ID);
-                    out.writeUTF(leftLeaf.address);
+                    if (leftLeaf != null) {
+                        out.writeChar(leftLeaf.ID);
+                        out.writeUTF(leftLeaf.address);
+                        out.writeInt(leftLeaf.port);
+                    } else {
+                        out.writeChar(me.ID);
+                        out.writeUTF(me.address);
+                        out.writeInt(me.port);
+                    }
                     out.writeChar(me.ID);
                     out.writeUTF(me.address);
+                    out.writeInt(me.port);
                 }
                 //we don't update our leaves yet, as that message will come in the "joincomplete"
             } else {
-                print(String.format("Received 'join' request for ID %s, hop %d, routing to %s@%s",
-                        ID, hop, Integer.toHexString(bestPeer.ID), bestPeer.address));
+                print(String.format("Received 'join' request for ID %s, hop %d, routing to %s@%s:%d",
+                        ID, hop, Integer.toHexString(bestPeer.ID), bestPeer.address, bestPeer.port));
                 out.writeChar(bestPeer.ID);
             }
         }
@@ -443,10 +492,12 @@ class Peer {
             PeerInfo newLeftLeaf = new PeerInfo();
             newLeftLeaf.ID = in.readChar();
             newLeftLeaf.address = in.readUTF();
+            newLeftLeaf.port = in.readInt();
 
             PeerInfo newRightLeaf = new PeerInfo();
             newRightLeaf.ID = in.readChar();
             newRightLeaf.address = in.readUTF();
+            newRightLeaf.port = in.readInt();
             if (addToRouting(newLeftLeaf) || addToRouting(newRightLeaf)) {
                 print("Leaves changed.");
                 printLeaves();
@@ -483,25 +534,31 @@ class Peer {
                         Integer.toHexString(fileID), filename, fileContents.length));
                 out.write(fileContents);
                 file.delete();
+                files.remove(fileID);
             }
+            //TODO print contents if changed
         }
 
         private PeerInfo route(char ID) throws IOException {
             //if i don't have it but within leaf set range, forward to closest leaf (could be me)
             int meDist = Helper.ringDistance(me.ID, ID);
-            int leftDist = Helper.ringDistance(leftLeaf.ID, ID);
-            int rightDist = Helper.ringDistance(rightLeaf.ID, ID);
-            if (!leftLeaf.address.equals("") && meDist < 0 && leftDist >= 0) { // to the left and within leaf set
-                if (-meDist < leftDist) {
-                    return me;
-                } else {
-                    return leftLeaf;
+            if (leftLeaf != null) {
+                int leftDist = Helper.ringDistance(leftLeaf.ID, ID);
+                if (meDist < 0 && leftDist >= 0) { // to the left and within leaf set
+                    if (-meDist < leftDist) {
+                        return me;
+                    } else {
+                        return leftLeaf;
+                    }
                 }
-            } else if (!rightLeaf.address.equals("") && meDist >= 0 && rightDist <= 0) { // to the right and within leaf set
-                if (meDist < -rightDist) {
-                    return me;
-                } else {
-                    return rightLeaf;
+            } else if (rightLeaf != null) {
+                int rightDist = Helper.ringDistance(rightLeaf.ID, ID);
+                if (meDist >= 0 && rightDist <= 0) { // to the right and within leaf set
+                    if (meDist < -rightDist) {
+                        return me;
+                    } else {
+                        return rightLeaf;
+                    }
                 }
             }
 
@@ -539,14 +596,20 @@ class Peer {
         }
 
         private PeerInfo getClosestLeaf(char ID) {
-            int leftDist = Math.abs(Helper.ringDistance(leftLeaf.ID, ID));
-            int rightDist = Helper.ringDistance(rightLeaf.ID, ID);
-            if (!leftLeaf.address.equals("") && Math.abs(leftDist) < Math.abs(rightDist))
-                return leftLeaf;
-            else if (!rightLeaf.address.equals(""))
-                return rightLeaf;
-            else
+            if (leftLeaf == null && rightLeaf == null) // all null, no dice!
                 return null;
+            else if (leftLeaf == null) // right isn't null, left is
+                return rightLeaf;
+            else if (rightLeaf == null) //left isn't null, right is
+                return leftLeaf;
+            else { //both non-null, do comparison
+                int leftDist = Math.abs(Helper.ringDistance(leftLeaf.ID, ID));
+                int rightDist = Helper.ringDistance(rightLeaf.ID, ID);
+                if (Math.abs(leftDist) < Math.abs(rightDist))
+                    return leftLeaf;
+                else
+                    return rightLeaf;
+            }
         }
     }
 
@@ -580,6 +643,7 @@ class Peer {
                 PeerInfo newPeer = new PeerInfo();
                 newPeer.ID = in.readChar();
                 newPeer.address = in.readUTF();
+                newPeer.port = in.readInt();
                 if (!newPeer.address.equals("") && Helper.rng.nextBoolean()) {
                     if (addToRouting(newPeer)) {
                         didChange = true;
@@ -596,9 +660,11 @@ class Peer {
                 if (cell == null) {
                     out.writeChar((char)0);
                     out.writeUTF("");
+                    out.writeInt(0);
                 } else {
                     out.writeChar(cell.ID);
                     out.writeUTF(cell.address);
+                    out.writeInt(cell.port);
                 }
             }
         }

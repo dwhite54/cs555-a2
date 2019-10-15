@@ -12,13 +12,11 @@ import java.util.Scanner;
 class StoreData {
     private final String discoveryMachine;
     private final int discoveryPort;
-    private final int peerPort;
     private static final String pre = "StoreData: ";
 
-    StoreData(String discoveryMachine, int discoveryPort, int peerPort) {
+    StoreData(String discoveryMachine, int discoveryPort) {
         this.discoveryMachine = discoveryMachine;
         this.discoveryPort = discoveryPort;
-        this.peerPort = peerPort;
     }
 
     private static void print(String s) {
@@ -74,8 +72,8 @@ class StoreData {
         }
         char contentID = Helper.getDigest(filename.getBytes());
         char peerID;
-        print("File digest: " + Integer.toHexString(contentID));
         String peerHost;
+        print("File digest: " + Integer.toHexString(contentID));
         try (
                 Socket s = new Socket(discoveryMachine, discoveryPort);
                 DataInputStream in = new DataInputStream(s.getInputStream());
@@ -84,7 +82,7 @@ class StoreData {
             out.writeUTF("get");
             if (in.readBoolean()) {
                 peerID = in.readChar();
-                peerHost = in.readUTF();
+                peerHost = in.readUTF() + ":" + in.readInt();
                 print("Connecting to random peer " + peerHost);
             }
             else {
@@ -99,19 +97,20 @@ class StoreData {
 
         ArrayList<Character> joinIDs = new ArrayList<>();
         joinIDs.add(peerID);
-        ArrayList<String> joinNodes = new ArrayList<>();
-        joinNodes.add(peerHost);
+        ArrayList<String> joinAddresses = new ArrayList<>();
+        joinAddresses.add(peerHost);
         int i = 0;
         while (true) {
+            String[] peerAddress = peerHost.split(":");
             try (
-                    Socket s = new Socket(peerHost, peerPort);
+                    Socket s = new Socket(peerAddress[0], Integer.parseInt(peerAddress[1]));
                     DataInputStream in = new DataInputStream(s.getInputStream());
                     DataOutputStream out = new DataOutputStream(s.getOutputStream())
             ) {
                 out.writeUTF("insert");
                 out.writeChar(contentID);
                 out.writeInt(++i);
-                String newPeerHost = in.readUTF();
+                String newPeerHost = in.readUTF() + ":" + in.readInt();
                 if (newPeerHost.equals(peerHost)) {  // this node has the file
                     out.writeUTF(filename);
                     out.writeInt(contents.length);
@@ -120,15 +119,15 @@ class StoreData {
                 } else {
                     joinIDs.add(in.readChar());
                     peerHost = newPeerHost;
-                    joinNodes.add(peerHost);
+                    joinAddresses.add(peerHost);
                 }
             } catch (IOException e) {
-                print("Error opening socket connection to peer " + peerHost + ":" + peerPort);
+                print("Error opening socket connection to peer " + peerHost);
                 e.printStackTrace();
                 return false;
             }
         }
-        printTrace(joinIDs, joinNodes);
+        printTrace(joinIDs, joinAddresses);
         return true;
     }
 
