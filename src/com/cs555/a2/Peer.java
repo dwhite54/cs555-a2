@@ -301,6 +301,19 @@ class Peer {
         }
     }
 
+    private static void sendRing(String msg, int hop) {
+        try (
+                var s = new Socket(largerLeaf.address, largerLeaf.port);
+                var out = new DataOutputStream(s.getOutputStream())
+        ) {
+            out.writeUTF("ring");
+            out.writeUTF(msg + " -> " + Integer.toHexString(largerLeaf.ID));
+            out.writeInt(hop);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     private static class SendHandler extends Thread {
         @Override
         public void run() {
@@ -328,6 +341,9 @@ class Peer {
                         break;
                     case "showfiles":
                         printFiles();
+                        break;
+                    case "ring":
+                        sendRing(Integer.toHexString(me.ID), 0);
                         break;
                     default:
                         System.out.println("Invalid verb");
@@ -368,6 +384,8 @@ class Peer {
         @Override
         public void run()
         {
+            String ring = "";
+            int ringHop = -1;
             try {
                 String cmd = in.readUTF();
                 switch (cmd) {
@@ -381,6 +399,10 @@ class Peer {
                         print("Received 'propagate' command");
                         handlePropagate();
                         break;
+                    case "ring":
+                        ring = in.readUTF();
+                        ringHop = in.readInt();
+                        break;
                 }
                 this.in.close();
                 this.out.close();
@@ -388,6 +410,15 @@ class Peer {
             } catch (IOException e) {
                 print("unknown error");
                 e.printStackTrace();
+            }
+            if (ring.length() > 0) {
+                if (ring.substring(0, 4).equals(Integer.toHexString(me.ID))) {
+                    System.out.println("RING END");
+                    System.out.println(ring);
+                    System.out.println(ringHop);
+                } else {
+                    sendRing(ring, ++ringHop);
+                }
             }
         }
 
