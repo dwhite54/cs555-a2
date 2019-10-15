@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -443,17 +444,9 @@ class Peer {
                 // assume new is within bounds of our leaf set (otherwise would not be closest to us)
                 if (meDist > 0) {  // new is clockwise of us
                     writePeer(out, me);
-                    if (largerLeaf != null) {
-                        writePeer(out, largerLeaf);
-                    } else {
-                        writePeer(out, me);
-                    }
+                    writePeer(out, Objects.requireNonNullElseGet(largerLeaf, () -> me));
                 } else {  // new is anticlockwise of us
-                    if (smallerLeaf != null) {
-                        writePeer(out, smallerLeaf);
-                    } else {
-                        writePeer(out, me);
-                    }
+                    writePeer(out, Objects.requireNonNullElseGet(smallerLeaf, () -> me));
                     writePeer(out, me);
                 }
                 //we don't update our leaves yet, as that message will come in the "joincomplete"
@@ -624,7 +617,7 @@ class Peer {
         for (int i = 0; i < HpID; i++) {
             for (int j = 0; j < BpH*4; j++) {
                 PeerInfo newPeer = readPeer(in);
-                if (!newPeer.address.equals("") && Helper.rng.nextBoolean()) {  // a little randomness
+                if (!newPeer.address.equals("") && routingTable[i][j] != null) { //TODO rule? randomness?
                     if (addToRouting(newPeer)) {
                         didChange = true;
                     }
