@@ -69,6 +69,29 @@ class Helper {
         }
     }
 
+    static int negRingDistance(char a, char b) {
+        int dist = ringDistance(a, b);
+        if (dist < 0)
+            return dist;
+        else
+            return dist - Character.MAX_VALUE;
+    }
+
+    static int posRingDistance(char a, char b) {
+        int dist = ringDistance(a, b);
+        if (dist > 0)
+            return dist;
+        else
+            return dist + Character.MAX_VALUE;
+    }
+//
+//    //is ID2 between the other two on a ring
+//    static boolean isBetween(char ID1, char ID2, char ID3) {
+//        int oneTwo = Helper.ringDistance(ID1, ID2);
+//        int twoThree = Helper.ringDistance(ID2, ID3);
+//        return oneTwo > 0 && twoThree < 0 || oneTwo < 0 && twoThree > 0;
+//    }
+
     private static final String[] nicknames = {"Abby", "Abe", "Abram", "Aby", "Ada", "Adrian", "Aggie", "Aggy",
             "Aileen", "Ailie", "Alan", "Alec", "Aleck", "Alex", "Alf", "Alfie", "Algy", "Alick", "Allie", "Ally",
             "Andy", "Ann", "Anna", "Anne", "Annabel", "Annaple", "Annie", "Archie", "Archy", "Augustin", "Austin",
