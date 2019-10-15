@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -175,7 +176,7 @@ class Peer {
             dout.writeInt(me.port);
             joinIDs.add(din.readChar());
             joinNodes.add(din.readUTF() + ":" + din.readInt());
-            if (!joinNodes.get(0).equals("")) { //else we are the first
+            if (!joinNodes.get(0).equals(":0")) { //else we are the first
                 print("Joining via " + Integer.toHexString(joinIDs.get(0)) + "@" + joinNodes.get(0));
 
                 //route self through table, getting rows of routing table along the way
@@ -196,21 +197,21 @@ class Peer {
                         int p = pin.readInt(); // length of prefix match
                         print("Matched " + p + " rows");
                         for (; rowIdx <= p; rowIdx++) {
-                            for (int colIdx = 0; colIdx < HpID; colIdx++) {
+                            for (int colIdx = 0; colIdx < HpID*4; colIdx++) {
                                 char newID = pin.readChar();
                                 String newAddress = pin.readUTF();
-                                if (colIdx != myColIdx && newAddress.equals("")) {
-                                    routingTable[rowIdx][colIdx] = null;
-                                } else {
+                                int newPort = pin.readInt();
+                                if (colIdx != myColIdx && !newAddress.equals("")) {
                                     PeerInfo newPeer = new PeerInfo();
                                     newPeer.ID = newID;
                                     newPeer.address = newAddress;
+                                    newPeer.port = newPort;
                                     routingTable[rowIdx][colIdx] = newPeer;
                                 }
                             }
                             rowIdx++;
                         }
-                        String nextAddress = pin.readUTF() + pin.readInt();
+                        String nextAddress = pin.readUTF() + ":" + pin.readInt();
                         if (nextAddress.equals(joinNodes.get(joinNodes.size() - 1))) {//the one we just talked to is the best match
                             //now we need the leaf set from the last one we talked to (closest)
                             leftLeaf = new PeerInfo();
@@ -231,7 +232,7 @@ class Peer {
                         return;
                     }
                 }
-                propagateSelf(din);
+                propagateSelf();
 
             } else {
                 print("We are the first in the network.");
@@ -248,49 +249,56 @@ class Peer {
         printTrace(joinIDs, joinNodes);
     }
 
-    private void propagateSelf(DataInputStream din) throws IOException {
+    private void propagateSelf() throws IOException {
+        HashSet<Character> IDs = new HashSet<>();
         int hop = 0;
+
+        if (leftLeaf != null) sendContents(++hop, leftLeaf, IDs);
+        if (rightLeaf != null) sendContents(++hop, rightLeaf, IDs);
+
         for (PeerInfo[] row : routingTable) {
             for (PeerInfo cell : row) {
-                if (cell != null) {
-                    sendContents(din, ++hop, cell);
+                if (cell != null && cell.ID != me.ID) {
+                    sendContents(++hop, cell, IDs);
                 }
             }
         }
-        if (leftLeaf != null) sendContents(din, ++hop, leftLeaf);
-        if (rightLeaf != null) sendContents(din, ++hop, rightLeaf);
     }
 
-    private void sendContents(DataInputStream din, int hop, PeerInfo peerInfo) throws IOException {
-        try (
-                var s = new Socket(peerInfo.address, peerInfo.port);
-                var out = new DataOutputStream(s.getOutputStream())
-        ) {
-            out.writeUTF("propagate");
-            out.writeChar(me.ID);
-            out.writeInt(++hop);
-            out.writeUTF(me.address);
-            out.writeInt(me.port);
-            writeRouting(out);
-            out.writeChar(leftLeaf.ID);
-            out.writeUTF(leftLeaf.address);
-            out.writeInt(leftLeaf.port);
-            out.writeChar(rightLeaf.ID);
-            out.writeUTF(rightLeaf.address);
-            out.writeInt(rightLeaf.port);
-            int numFiles = din.readInt();
-            for (int i = 0; i < numFiles; i++) {
-                char fileID = din.readChar();
-                String filename = din.readUTF();
-                int fileSize = din.readInt();
-                byte[] fileContents = new byte[fileSize];
-                int bytesRead = din.read(fileContents);
-                if (bytesRead != fileSize)
-                    print("Error in file transmission");
-                else {
-                    File file = new File(Paths.get(Helper.peerStoragePath, filename).toString());
-                    new FileOutputStream(file).write(fileContents);
-                    files.put(fileID, filename);
+    private void sendContents(int hop, PeerInfo peerInfo, HashSet<Character> IDs) throws IOException {
+        if (!IDs.contains(peerInfo.ID)) {
+            IDs.add(peerInfo.ID);
+            try (
+                    var s = new Socket(peerInfo.address, peerInfo.port);
+                    var in = new DataInputStream(s.getInputStream());
+                    var out = new DataOutputStream(s.getOutputStream())
+            ) {
+                out.writeUTF("propagate");
+                out.writeChar(me.ID);
+                out.writeInt(++hop);
+                out.writeUTF(me.address);
+                out.writeInt(me.port);
+                out.writeChar(leftLeaf.ID);
+                out.writeUTF(leftLeaf.address);
+                out.writeInt(leftLeaf.port);
+                out.writeChar(rightLeaf.ID);
+                out.writeUTF(rightLeaf.address);
+                out.writeInt(rightLeaf.port);
+                writeRouting(out);
+                int numFiles = in.readInt();
+                for (int i = 0; i < numFiles; i++) {
+                    char fileID = in.readChar();
+                    String filename = in.readUTF();
+                    int fileSize = in.readInt();
+                    byte[] fileContents = new byte[fileSize];
+                    int bytesRead = in.read(fileContents);
+                    if (bytesRead != fileSize)
+                        print("Error in file transmission");
+                    else {
+                        File file = new File(Paths.get(Helper.peerStoragePath, filename).toString());
+                        new FileOutputStream(file).write(fileContents);
+                        files.put(fileID, filename);
+                    }
                 }
             }
         }
@@ -430,9 +438,11 @@ class Peer {
                     if (cell == null) {
                         out.writeChar(0);
                         out.writeUTF("");
+                        out.writeInt(0);
                     } else {
                         out.writeChar(cell.ID);
                         out.writeUTF(cell.address);
+                        out.writeInt(cell.port);
                     }
                 }
             }
@@ -482,11 +492,6 @@ class Peer {
 
         private void handlePropagate(PeerInfo newNode) throws IOException {
             // a node joined and is broadcasting its information
-            // we take their routing table and add each value in it to ours if we don't already have one
-            if (readAndUpdateRouting(in)) {
-                print("Table changed.");
-                printTable();
-            }
 
             //then we take their leaves and add them to our routing
             PeerInfo newLeftLeaf = new PeerInfo();
@@ -498,21 +503,33 @@ class Peer {
             newRightLeaf.ID = in.readChar();
             newRightLeaf.address = in.readUTF();
             newRightLeaf.port = in.readInt();
-            if (addToRouting(newLeftLeaf) || addToRouting(newRightLeaf)) {
-                print("Leaves changed.");
-                printLeaves();
+            // we take their routing table and add each value in it to ours if we don't already have one
+            if (addToRouting(newLeftLeaf) || addToRouting(newRightLeaf) || readAndUpdateRouting(in)) {
+                print("Table changed.");
+                printTable();
             }
 
             // if they're closer than one of our leaves, we replace that leaf with them
             // (we don't need to worry about propagating this to OUR leaves, since they receive this same message)
             int newDist = Helper.ringDistance(me.ID, newNode.ID);
 
+            boolean leavesChanged = false;
             //if closer than left, replace left with new
             //if closer than right, replace right with new
-            if (newDist < 0 && Helper.ringDistance(leftLeaf.ID, newNode.ID) >= 0)
+            if (leftLeaf == null || (newDist < 0 && Helper.ringDistance(leftLeaf.ID, newNode.ID) >= 0)) {
                 leftLeaf = newNode;
-            else if (newDist >= 0 && Helper.ringDistance(rightLeaf.ID, newNode.ID) <= 0)
+                leavesChanged = true;
+            }
+
+            if (rightLeaf == null || (newDist >= 0 && Helper.ringDistance(rightLeaf.ID, newNode.ID) <= 0)) {
                 rightLeaf = newNode;
+                leavesChanged = true;
+            }
+
+            if (leavesChanged) {
+                print("Leaves changed.");
+                printLeaves();
+            }
 
             //finally, if they are now closer to any files of ours, we give them those (could be done above)
             ArrayList<Character> filesToMove = new ArrayList<>();
@@ -630,10 +647,10 @@ class Peer {
     }
 
     private static boolean addToRouting(PeerInfo peer) {
-        int rowIdx = Helper.getLongestCommonPrefixLength(me.ID, peer.ID);
-        if (rowIdx == routingTable.length - 1) return false;  //same ID
-        int colIdx = Helper.getValueAtHexIdx(peer.ID, rowIdx + 1);
-        routingTable[rowIdx][colIdx] = peer;
+        int prefixLength = Helper.getLongestCommonPrefixLength(me.ID, peer.ID);
+        if (prefixLength == routingTable.length) return false;  //same ID
+        int colIdx = Helper.getValueAtHexIdx(peer.ID, prefixLength);
+        routingTable[prefixLength][colIdx] = peer;
         return true;
     }
 

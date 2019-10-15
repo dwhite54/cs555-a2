@@ -2,7 +2,7 @@
   <configuration default="false" name="discovery" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="com.cs555.a2.Main" />
     <module name="cs555-a2" />
-    <option name="PROGRAM_PARAMETERS" value=" --mode discovery --discovery-port 50292 --discovery-machine chip.cs.colostate.edu --peer-port 50293" />
+    <option name="PROGRAM_PARAMETERS" value=" --mode discovery --discovery-port 50292 --discovery-machine localhost" />
     <RunnerSettings RunnerId="Run" />
     <ConfigurationWrapper RunnerId="Run" />
     <method v="2">

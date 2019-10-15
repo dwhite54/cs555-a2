@@ -128,10 +128,12 @@ class DiscoveryNode {
                             print("No peers, sending blank");
                             out.writeChar(0);
                             out.writeUTF("");
+                            out.writeInt(0);
                         } else {
                             randID = getRandomPeer();
                             out.writeChar(randID);
                             out.writeUTF(peers.get(randID).address);
+                            out.writeInt(peers.get(randID).port);
                         }
                         print("Dispatched random peer, waiting for join completion...");
                         PeerInfo newPeer = new PeerInfo();

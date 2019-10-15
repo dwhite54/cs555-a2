@@ -118,6 +118,8 @@ public class Main {
                 s.run();
                 break;
             case PEER:
+                if (peerPort == 0)
+                    peerPort = Helper.rng.nextInt(10000) + 50000;
                 Peer p = new Peer(discoveryMachine, discoveryPort, peerPort, peerId);
                 p.run();
                 break;

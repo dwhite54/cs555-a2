@@ -2,6 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9d3e2026-5806-4ad9-ace8-e646a861d10f" name="Default Changelist" comment="Adding port to peerinfo">
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/discovery.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/discovery.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/peer.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/peer.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/storedata.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/storedata.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cs555-a2.jar" beforeDir="false" afterPath="$PROJECT_DIR$/cs555-a2.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Main.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" afterDir="false" />
     </list>
@@ -97,6 +103,8 @@
       <workItem from="1570916880047" duration="475000" />
       <workItem from="1571005679069" duration="12388000" />
       <workItem from="1571071282081" duration="8922000" />
+      <workItem from="1571107976739" duration="63000" />
+      <workItem from="1571108049421" duration="4615000" />
     </task>
     <task id="LOCAL-00001" summary="Implement discovery node">
       <created>1570238006385</created>
@@ -199,10 +207,28 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/com/cs555/a2/Peer.java</url>
-          <line>439</line>
-          <option name="timeStamp" value="5" />
+          <line>566</line>
+          <option name="timeStamp" value="30" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/com/cs555/a2/Peer.java</url>
+          <line>575</line>
+          <option name="timeStamp" value="31" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/com/cs555/a2/Peer.java</url>
+          <line>577</line>
+          <option name="timeStamp" value="33" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/com/cs555/a2/Peer.java</url>
+          <line>593</line>
+          <option name="timeStamp" value="34" />
         </line-breakpoint>
       </breakpoints>
+      <default-breakpoints>
+        <breakpoint enabled="true" type="java-exception" />
+      </default-breakpoints>
     </breakpoint-manager>
   </component>
 </project>
