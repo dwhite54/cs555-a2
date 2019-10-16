@@ -4,12 +4,12 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,6 +21,11 @@ class Peer {
         char ID;
         String address;
         int port;
+
+        @Override
+        public String toString() {
+            return Integer.toHexString(ID) + " " + address + ":" + port;
+        }
     }
 
     private static ServerSocket ss;
@@ -40,10 +45,22 @@ class Peer {
         Peer.me = new PeerInfo();
         Peer.me.ID = ID;
         Peer.me.address = InetAddress.getLocalHost().getCanonicalHostName();
-        Peer.me.port = peerPort;
         largerLeaf = me;
         smallerLeaf = me;
-        ss = new ServerSocket(me.port);
+        boolean failed = false;
+        do {
+            if (peerPort == 0 || failed) {
+                peerPort = Helper.rng.nextInt(10000) + 50000;
+                print("Trying to establish server on port " + peerPort);
+            }
+            Peer.me.port = peerPort;
+            try {
+                ss = new ServerSocket(me.port);
+                failed = false;
+            } catch (SocketException e) {
+                failed = true;
+            }
+        } while (failed);
         final Thread mainThread = Thread.currentThread();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
@@ -90,9 +107,9 @@ class Peer {
 
     private static void printLeaves() {
         String printString = "Leaves:";
-        printString += String.format(" left: %s@%s:%d",
+        printString += String.format(" smaller: %s@%s:%d",
                 Integer.toHexString(smallerLeaf.ID), smallerLeaf.address, smallerLeaf.port);
-        printString += String.format(" right: %s@%s:%d",
+        printString += String.format(" larger: %s@%s:%d",
                 Integer.toHexString(largerLeaf.ID), largerLeaf.address, largerLeaf.port);
         print(printString);
     }
@@ -326,6 +343,7 @@ class Peer {
                     case "showtable":
                         printTable();
                         break;
+                    case "":
                     case "showrouting":
                         printTable();
                     case "showleaves":
@@ -404,10 +422,10 @@ class Peer {
                 e.printStackTrace();
             }
             if (ring.length() > 0) {
-                if (ring.substring(0, 4).equals(Integer.toHexString(me.ID))) {
+                if (ring.substring(0, 4).equals(Integer.toHexString(me.ID)) || ringHop >= 20000) {
                     System.out.println("RING END");
                     System.out.println(ring);
-                    System.out.println(ringHop);
+                    System.out.println(++ringHop);
                 } else {
                     sendRing(ring, ++ringHop);
                 }
@@ -462,14 +480,16 @@ class Peer {
             if (bestPeer.ID == me.ID) {
                 print(String.format("Received 'join' request for ID %s, hop %d, and I am closest.",
                         Integer.toHexString(ID), hop));
-                int largerLeafDist = Helper.ringDistance(largerLeaf.ID, ID);
-                int smallerLeafDist = Helper.ringDistance(smallerLeaf.ID, ID);
                 // assume new is within bounds of our leaf set (otherwise would not be closest to us)
-                if (largerLeafDist < smallerLeafDist) {  //closer to larger
+                if (Helper.isBetween(me.ID, ID, largerLeaf.ID)) {  //closer to larger
                     writePeer(out, me);
                     writePeer(out, largerLeaf);
-                } else {  // new is anticlockwise of us
+                } else if (Helper.isBetween(largerLeaf.ID, ID, me.ID)) {  // new is anticlockwise of us
                     writePeer(out, smallerLeaf);
+                    writePeer(out, me);
+                } else { //error condition
+                    print("INVALID ROUTE--ID ROUTED TO ME BUT ID NOT WITHIN MY LEAF SET");
+                    writePeer(out, me);
                     writePeer(out, me);
                 }
                 //we don't update our leaves yet, as that message will come in the "joincomplete"
@@ -554,7 +574,7 @@ class Peer {
             if (p < 0) { // no match found--illegal routing table
                 out.writeUTF(""); // this will indicate internal error
                 throw new IOException("Illegal routing table.");
-            } else if (p == routingTable.length - 1) {  // match (should've been caught by leaf search)
+            } else if (p == routingTable.length) {  // match (should've been caught by leaf search)
                 return me;
             }
             colIdx = Helper.getValueAtHexIdx(ID, p);
@@ -575,7 +595,7 @@ class Peer {
             int meDist = Helper.ringDistance(me.ID, ID);
             int largerLeafDist = Helper.ringDistance(largerLeaf.ID, ID);
             int smallerLeafDist = Helper.ringDistance(smallerLeaf.ID, ID);
-            if (meDist < largerLeafDist && meDist < smallerLeafDist) {
+            if ((meDist <= largerLeafDist && meDist <= smallerLeafDist)) {
                 return me;
             } else if (largerLeafDist < smallerLeafDist) {
                 return largerLeaf;

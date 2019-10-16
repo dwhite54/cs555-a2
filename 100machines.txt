@@ -47,7 +47,6 @@ santa-fe
 springfield
 tallahassee
 topeka
-trenton
 anchovy
 barracuda
 blowfish
@@ -63,7 +62,6 @@ grouper
 halibut
 herring
 mackerel
-marlin
 perch
 pollock
 sardine
@@ -81,7 +79,6 @@ breckenridge
 buttermilk
 cooper
 copper-mtn
-crested-butte
 eldora
 grandby-ranch
 aspen-highlands

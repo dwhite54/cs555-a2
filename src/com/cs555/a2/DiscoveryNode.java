@@ -57,6 +57,7 @@ class DiscoveryNode {
                     String ID = Integer.toHexString(entry.getKey());
                     print(String.format("%s@%s:%d id: %s", val.name, val.address, val.port, ID));
                 }
+                print("Length: " + peers.size());
             }
         }
     }
@@ -81,10 +82,9 @@ class DiscoveryNode {
                 s = ss.accept();
                 DataInputStream in = new DataInputStream(s.getInputStream());
                 DataOutputStream out = new DataOutputStream(s.getOutputStream());
-                synchronized (peers) {
-                    Thread t = new ReceiveHandler(s, in, out);
-                    t.start();
-                }
+                Thread t = new ReceiveHandler(s, in, out);
+                t.start();
+                t.join();
             }
             catch (Exception e){
                 if (s != null){
@@ -156,6 +156,7 @@ class DiscoveryNode {
                             out.writeUTF(peers.get(randID).address);
                             out.writeInt(peers.get(randID).port);
                         }
+                        break;
                     case "leave":
                         char leaveID = in.readChar();
                         PeerInfo leavingPeer = peers.get(leaveID);

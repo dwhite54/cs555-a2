@@ -83,7 +83,7 @@ public class Main {
                         peerPort = Integer.parseInt(args[i+1]);
                         break;
                     case "--peer-id":
-                        peerId = (char)Integer.parseInt(args[i+1]);
+                        peerId = (char)Integer.parseInt(args[i+1], 16);
                         break;
                     case "--mode":
                         switch (args[i+1].toLowerCase()) {
@@ -118,8 +118,6 @@ public class Main {
                 s.run();
                 break;
             case PEER:
-                if (peerPort == 0)
-                    peerPort = Helper.rng.nextInt(10000) + 50000;
                 Peer p = new Peer(discoveryMachine, discoveryPort, peerPort, peerId);
                 p.run();
                 break;

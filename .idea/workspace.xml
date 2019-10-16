@@ -2,8 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9d3e2026-5806-4ad9-ace8-e646a861d10f" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/peer.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/peer.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Helper.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Helper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/100machines.txt" beforeDir="false" afterPath="$PROJECT_DIR$/100machines.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cs555-a2.jar" beforeDir="false" afterPath="$PROJECT_DIR$/cs555-a2.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Main.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -67,10 +71,28 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.peer">
+  <component name="RunManager" selected="Application.peer3">
+    <configuration name="peer2" type="Application" factoryName="Application" singleton="false">
+      <option name="MAIN_CLASS_NAME" value="com.cs555.a2.Main" />
+      <module name="cs555-a2" />
+      <option name="PROGRAM_PARAMETERS" value=" --mode peer --discovery-port 50292 --discovery-machine localhost --peer-id ad1a" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="peer3" type="Application" factoryName="Application" singleton="false">
+      <option name="MAIN_CLASS_NAME" value="com.cs555.a2.Main" />
+      <module name="cs555-a2" />
+      <option name="PROGRAM_PARAMETERS" value=" --mode peer --discovery-port 50292 --discovery-machine localhost --peer-id ad71" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <list>
       <item itemvalue="Application.discovery" />
       <item itemvalue="Application.peer" />
+      <item itemvalue="Application.peer2" />
+      <item itemvalue="Application.peer3" />
       <item itemvalue="Application.storedata" />
     </list>
   </component>
@@ -185,7 +207,14 @@
       <option name="project" value="LOCAL" />
       <updated>1571177263029</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="improve distance metrics">
+      <created>1571181615033</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1571181615033</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -219,7 +248,8 @@
     <MESSAGE value="bug squashin'" />
     <MESSAGE value="Tested joining lots of clients and inserting. Sweet." />
     <MESSAGE value="add ring message" />
-    <option name="LAST_COMMIT_MESSAGE" value="add ring message" />
+    <MESSAGE value="improve distance metrics" />
+    <option name="LAST_COMMIT_MESSAGE" value="improve distance metrics" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
