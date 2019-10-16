@@ -297,14 +297,10 @@ class Peer {
                     String filename = in.readUTF();
                     int fileSize = in.readInt();
                     byte[] fileContents = new byte[fileSize];
-                    int bytesRead = in.read(fileContents);
-                    if (bytesRead != fileSize)
-                        print("Error in file transmission");
-                    else {
-                        File file = new File(Paths.get(Helper.peerStoragePath, filename).toString());
-                        new FileOutputStream(file).write(fileContents);
-                        files.put(fileID, filename);
-                    }
+                    in.readFully(fileContents);
+                    File file = new File(Paths.get(Helper.peerStoragePath, filename).toString());
+                    new FileOutputStream(file).write(fileContents);
+                    files.put(fileID, filename);
                 }
             }
         }
@@ -422,7 +418,7 @@ class Peer {
                 e.printStackTrace();
             }
             if (ring.length() > 0) {
-                if (ring.substring(0, 4).equals(Integer.toHexString(me.ID)) || ringHop >= 20000) {
+                if (ring.substring(0, 4).equals(Integer.toHexString(me.ID)) || ringHop >= 500) {
                     System.out.println("RING END");
                     System.out.println(ring);
                     System.out.println(++ringHop);
@@ -443,16 +439,16 @@ class Peer {
                 String filename = in.readUTF();
                 int fileSize = in.readInt();
                 byte[] fileContents = new byte[fileSize];
-                if (in.read(fileContents) == fileSize) {
-                    Path fileHome = Paths.get(Helper.peerStoragePath);
-                    if (Files.notExists(fileHome))
-                        Files.createDirectories(fileHome);
-                    File file = new File(Paths.get(Helper.peerStoragePath, filename).toString());
-                    print(String.format("Writing file %s named %s size %d",
-                            Integer.toHexString(ID), filename, fileContents.length));
-                    new FileOutputStream(file).write(fileContents);
-                    files.put(ID, filename);
-                }
+                in.readFully(fileContents);
+                Path fileHome = Paths.get(Helper.peerStoragePath);
+                if (Files.notExists(fileHome))
+                    Files.createDirectories(fileHome);
+                File file = new File(Paths.get(Helper.peerStoragePath, filename).toString());
+                print(String.format("Writing file %s named %s size %d",
+                        Integer.toHexString(ID), filename, fileContents.length));
+                new FileOutputStream(file).write(fileContents);
+                files.put(ID, filename);
+
             } else {
                 out.writeChar(bestPeer.ID);
                 print(String.format("Received 'insert' request for ID %s, hop %d, routing to %s@%s",

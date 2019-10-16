@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="9d3e2026-5806-4ad9-ace8-e646a861d10f" name="Default Changelist" comment="">
+    <list default="true" id="9d3e2026-5806-4ad9-ace8-e646a861d10f" name="Default Changelist" comment="fix file transfer; improve start scripts">
+      <change afterPath="$PROJECT_DIR$/allmachines.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/csv.csv" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/img.jpg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/machines" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/tbd.pdf" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/peer.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/peer.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/100machines.txt" beforeDir="false" afterPath="$PROJECT_DIR$/100machines.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.start.sh.swp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd.sh" beforeDir="false" afterPath="$PROJECT_DIR$/cmd.sh" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cs555-a2.jar" beforeDir="false" afterPath="$PROJECT_DIR$/cs555-a2.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/DiscoveryNode.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Main.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/com/cs555/a2/Peer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/start.sh" beforeDir="false" afterPath="$PROJECT_DIR$/start.sh" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -71,11 +76,11 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Application.peer3">
+  <component name="RunManager" selected="Application.peer">
     <configuration name="peer2" type="Application" factoryName="Application" singleton="false">
       <option name="MAIN_CLASS_NAME" value="com.cs555.a2.Main" />
       <module name="cs555-a2" />
-      <option name="PROGRAM_PARAMETERS" value=" --mode peer --discovery-port 50292 --discovery-machine localhost --peer-id ad1a" />
+      <option name="PROGRAM_PARAMETERS" value=" --mode peer --discovery-port 50292 --discovery-machine localhost --peer-id 488A" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -83,7 +88,7 @@
     <configuration name="peer3" type="Application" factoryName="Application" singleton="false">
       <option name="MAIN_CLASS_NAME" value="com.cs555.a2.Main" />
       <module name="cs555-a2" />
-      <option name="PROGRAM_PARAMETERS" value=" --mode peer --discovery-port 50292 --discovery-machine localhost --peer-id ad71" />
+      <option name="PROGRAM_PARAMETERS" value=" --mode peer --discovery-port 50292 --discovery-machine localhost --peer-id 4884" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -122,6 +127,7 @@
       <workItem from="1571071282081" duration="8922000" />
       <workItem from="1571107976739" duration="63000" />
       <workItem from="1571108049421" duration="14199000" />
+      <workItem from="1571245340534" duration="6090000" />
     </task>
     <task id="LOCAL-00001" summary="Implement discovery node">
       <created>1570238006385</created>
@@ -214,7 +220,14 @@
       <option name="project" value="LOCAL" />
       <updated>1571181615033</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="bug ssquashing">
+      <created>1571188725538</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1571188725538</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -249,7 +262,9 @@
     <MESSAGE value="Tested joining lots of clients and inserting. Sweet." />
     <MESSAGE value="add ring message" />
     <MESSAGE value="improve distance metrics" />
-    <option name="LAST_COMMIT_MESSAGE" value="improve distance metrics" />
+    <MESSAGE value="bug ssquashing" />
+    <MESSAGE value="fix file transfer; improve start scripts" />
+    <option name="LAST_COMMIT_MESSAGE" value="fix file transfer; improve start scripts" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
